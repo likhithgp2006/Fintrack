@@ -1,4 +1,4 @@
-# Smart Expense Tracker – Personal Finance Management System 💰
+# Fintrack – Smart Expense Tracker 💰
 
 A full-stack, responsive web application for personal expense tracking, budgeting, and financial analytics built with **HTML5, CSS3, Vanilla JavaScript, Python Flask**, and persistent **CSV file storage**.
 
@@ -7,9 +7,10 @@ A full-stack, responsive web application for personal expense tracking, budgetin
 ## 🌟 Key Features
 
 1. **User Authentication & Session Security**:
-   - Secure Registration & Login using Werkzeug password hashing (`pbkdf2:sha256`).
-   - Flask session-based authentication protecting user dashboard and APIs.
-   - Quick Demo Login credentials pre-populated.
+   - Secure Registration & Login using Werkzeug password hashing.
+   - Mobile number (10-digit) required at registration for SMS OTP support.
+   - Flask session-based authentication protecting all dashboard routes and APIs.
+   - **Forgot Password via SMS OTP** — 6-digit code sent to registered mobile number.
 
 2. **Dashboard & Visual Analytics**:
    - Stat Cards: **Total Income, Total Expenses, Net Balance, Total Transactions, Highest Expense, Current Month Spending**.
@@ -61,9 +62,12 @@ A full-stack, responsive web application for personal expense tracking, budgetin
     - Interactive 50/30/20 stacked visual breakdown (Needs vs Wants vs Savings).
     - Dynamic personalized smart spending insights and actionable recommendations.
 
-11. **🧾 Split Bill & Shared Expense Calculator**:
+11. **🧾 Split Bill, Live Rooms & Shared Expenses**:
     - Calculate shared group expenses with customizable Tip % (0%, 5%, 10%, 15%, Custom) and Tax %.
     - Equal splits vs Itemized/Custom participant weights.
+    - **Live Split Rooms** — Create a room and share a unique `ROOM-XXXX` code with friends. Anyone on the app can join with the code and see their share instantly.
+    - **Friends / Contacts System** — Search registered users by name, mobile, or email. Send/accept friend requests. Split bills directly with friends.
+    - **Shared Expense Notifications** — Bell alert when a friend splits a bill with you.
     - Round up to nearest ₹5 / ₹10 / whole number to eliminate awkward change.
     - One-click "📋 Copy WhatsApp Summary" ready to send to friends.
     - "💳 Record My Share as Expense" button to instantly log individual share into personal ledger.
@@ -172,14 +176,13 @@ http://127.0.0.1:5050
 
 ---
 
-## 🔑 Quick Demo Login Credentials
+## 🔑 Quick Start
 
-For testing and demonstration during college evaluation:
+1. Register a new account at `/register` with your **name, email, 10-digit mobile number, and password**.
+2. Log in and start tracking expenses immediately.
+3. For Forgot Password — enter your registered mobile number and receive a 6-digit SMS OTP.
 
-- **Email:** `likhith@example.com`
-- **Password:** `password123`
-
-*(The database auto-seeds realistic sample income and expense records on first run).*
+> **Note:** The CSV database files are auto-created on first run via `init_db()`. No manual setup needed.
 
 ---
 
@@ -212,15 +215,14 @@ For testing and demonstration during college evaluation:
 
 ### 1. `users.csv`
 ```csv
-id,name,email,password_hash,created_at
-1,Likhith,likhith@example.com,pbkdf2:sha256:...,2026-09-01 10:00:00
+id,name,email,phone,password_hash,created_at
+1,Likhith,likhith@example.com,9876543210,scrypt:...,2026-09-01 10:00:00
 ```
 
 ### 2. `expenses.csv`
 ```csv
 id,user_id,date,description,category,amount,payment_method,type,notes,created_at
 1,1,2026-09-01,Monthly Salary,Salary,50000,Bank Transfer,Income,Company payout,2026-09-01 09:00:00
-2,1,2026-09-02,House Rent,Housing,12000,Net Banking,Expense,Apartment rent,2026-09-02 11:30:00
 ```
 
 ### 3. `categories.csv`
@@ -234,6 +236,21 @@ id,name,type,icon,color
 ```csv
 id,user_id,category,amount,month,year
 1,1,Food,5000,09,2026
+```
+
+### 5. `friends.csv`
+```csv
+id,user_id,friend_user_id,status,created_at
+```
+
+### 6. `split_rooms.csv`
+```csv
+room_code,creator_user_id,creator_name,title,total_amount,tip_pct,tax_pct,split_type,status,created_at
+```
+
+### 7. `split_room_members.csv`
+```csv
+id,room_code,user_id,member_name,member_contact,share_amount,status,updated_at
 ```
 
 ---
@@ -296,35 +313,95 @@ Follow this step-by-step sequence when demonstrating the application for viva ev
 
 ---
 
-## 🚀 Deployment & Live Email OTP Setup
+## 🚀 Deployment Guide
 
-When deploying to production platforms (such as **Render**, **Railway**, **PythonAnywhere**, **Heroku**, or **VPS**):
+This app can be deployed on **Render**, **Railway**, **PythonAnywhere**, or any platform that supports Python/Flask.
 
-### 1. Configure SMTP Environment Variables
-In your deployment hosting dashboard (under **Environment Variables** / **Config Vars**) or in your `.env` file, add:
-
-```env
-# Flask Secret Key
-SECRET_KEY=your_strong_random_secret_key_here
-
-# Gmail SMTP Configuration (Recommended)
-MAIL_SERVER=smtp.gmail.com
-MAIL_PORT=587
-MAIL_USE_TLS=True
-MAIL_USERNAME=your_email@gmail.com
-MAIL_PASSWORD=your_16_character_app_password
-MAIL_DEFAULT_SENDER=your_email@gmail.com
+### Step 1: Push to GitHub
+```bash
+git add .
+git commit -m "deploy"
+git push origin main
 ```
 
-### 2. How to get a Gmail App Password
-1. Go to your [Google Account](https://myaccount.google.com/) -> **Security**.
-2. Enable **2-Step Verification**.
-3. Go to [App Passwords](https://myaccount.google.com/apppasswords).
-4. Create a new App Password (e.g. named `ExpenseTracker`) and copy the generated 16-character key.
-5. Paste this 16-character key as `MAIL_PASSWORD`.
-
-Whenever a user clicks "Forgot Password", the secure 6-digit OTP will be automatically generated and delivered directly to their email inbox.
+### Step 2: Connect to Render (Recommended — Free)
+1. Go to [render.com](https://render.com) → **New Web Service**
+2. Connect your GitHub repo (`Fintrack`)
+3. Set:
+   - **Build Command:** `pip install -r requirements.txt`
+   - **Start Command:** `gunicorn app:app`
+4. Add environment variables (see below)
+5. Click **Deploy**
 
 ---
 
-**Developed for BCA Final Year / Mini Project Demonstration.**
+## ⚙️ Post-Deployment: Configure SMS OTP (Required for Forgot Password)
+
+> **Important:** After deploying, you MUST configure an SMS provider for the Forgot Password feature to send real OTPs to users' mobile numbers.
+>
+> Without configuration, the app runs in **Demo Mode** — the OTP is displayed on screen instead of being sent via SMS (useful for local testing only).
+
+### Option A: Fast2SMS (Recommended for India 🇮🇳 — Free tier available)
+
+1. Sign up at **[fast2sms.com](https://www.fast2sms.com)**
+2. Go to **Dev API** section → Copy your API Key
+3. Add this environment variable in your deployment dashboard:
+
+```env
+FAST2SMS_API_KEY=your_fast2sms_api_key_here
+```
+
+✅ Works instantly with all Indian mobile numbers (10-digit).
+
+---
+
+### Option B: Twilio (International 🌍)
+
+1. Sign up at **[twilio.com](https://www.twilio.com)** (free trial gives ~$15 credit)
+2. Get your **Account SID**, **Auth Token**, and a **Twilio Phone Number**
+3. Add these environment variables:
+
+```env
+TWILIO_ACCOUNT_SID=ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+TWILIO_AUTH_TOKEN=your_twilio_auth_token
+TWILIO_PHONE_NUMBER=+1xxxxxxxxxx
+```
+
+---
+
+### Environment Variables Summary
+
+Add these in your hosting platform's **Environment Variables** panel (e.g. Render Dashboard → Environment):
+
+| Variable | Required | Description |
+|---|---|---|
+| `SECRET_KEY` | ✅ Yes | Random secret string for Flask sessions |
+| `FAST2SMS_API_KEY` | ⚡ For SMS OTP | API key from fast2sms.com (India) |
+| `TWILIO_ACCOUNT_SID` | ⚡ For SMS OTP | Twilio Account SID (International) |
+| `TWILIO_AUTH_TOKEN` | ⚡ For SMS OTP | Twilio Auth Token |
+| `TWILIO_PHONE_NUMBER` | ⚡ For SMS OTP | Twilio sender phone number |
+
+> See `.env.example` in the repo for the full template.
+
+### How SMS OTP Works
+
+```
+User clicks "Forgot Password"
+        ↓
+Enters registered 10-digit mobile number
+        ↓
+Server generates 6-digit OTP (valid 15 minutes)
+        ↓
+  ┌─────────────────────────────────────┐
+  │  SMS API configured?                │
+  │  YES → OTP sent via SMS to mobile  │
+  │  NO  → Demo Mode: OTP shown on     │
+  │         screen (testing only)       │
+  └─────────────────────────────────────┘
+        ↓
+User enters OTP → Sets new password
+```
+
+---
+
+**Developed for BCA Final Year / Mini Project — Fintrack Smart Expense Tracker.**
