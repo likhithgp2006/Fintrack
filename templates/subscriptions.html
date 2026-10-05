@@ -1,0 +1,263 @@
+{% extends "layout.html" %}
+
+{% block title %}Recurring Subscriptions - Smart Expense Tracker{% endblock %}
+{% block page_title %}Subscriptions & Recurring Bills{% endblock %}
+
+{% block content %}
+<!-- Subscriptions Header -->
+<div class="dashboard-header">
+  <div class="welcome-section">
+    <h1>Recurring Subscriptions & Bills 🔄</h1>
+    <p>Track recurring memberships, prevent surprise charges, and log renewals with one click.</p>
+  </div>
+  
+  <div class="header-actions">
+    <button class="btn btn-primary" id="openNewSubModalBtn">
+      <i class="fa-solid fa-plus"></i> Add Subscription
+    </button>
+  </div>
+</div>
+
+<!-- Subscriptions Summary Stats -->
+<div class="stats-grid">
+  <div class="card stat-card stat-month card-hover">
+    <div class="stat-info">
+      <span class="stat-label">Monthly Cost</span>
+      <span class="stat-value amount-expense" id="subMonthlyTotal">₹0.00</span>
+      <span class="stat-subtext">Normalized monthly recurring total</span>
+    </div>
+    <div class="stat-icon-wrapper">
+      <i class="fa-solid fa-calendar-check"></i>
+    </div>
+  </div>
+
+  <div class="card stat-card stat-expense card-hover">
+    <div class="stat-info">
+      <span class="stat-label">Annual Projection</span>
+      <span class="stat-value" id="subYearlyTotal">₹0.00</span>
+      <span class="stat-subtext">Estimated 12-month commitment</span>
+    </div>
+    <div class="stat-icon-wrapper">
+      <i class="fa-solid fa-receipt"></i>
+    </div>
+  </div>
+
+  <div class="card stat-card stat-income card-hover">
+    <div class="stat-info">
+      <span class="stat-label">Active Services</span>
+      <span class="stat-value" id="subActiveCount">0</span>
+      <span class="stat-subtext">Currently active memberships</span>
+    </div>
+    <div class="stat-icon-wrapper">
+      <i class="fa-solid fa-toggle-on"></i>
+    </div>
+  </div>
+
+  <div class="card stat-card stat-highest card-hover">
+    <div class="stat-info">
+      <span class="stat-label">Renewing Soon</span>
+      <span class="stat-value" id="subUpcomingCount">0</span>
+      <span class="stat-subtext">Due within the next 7 days</span>
+    </div>
+    <div class="stat-icon-wrapper">
+      <i class="fa-solid fa-bell"></i>
+    </div>
+  </div>
+</div>
+
+<!-- Subscriptions Table / Cards -->
+<div class="card">
+  <div class="section-header">
+    <div class="section-title">
+      <i class="fa-solid fa-arrows-rotate" style="color: var(--primary);"></i> Manage Subscriptions
+    </div>
+    <div style="font-size: 0.88rem; color: var(--text-muted);">
+      Click <strong>Log Expense</strong> to instantly record renewal in your transaction ledger
+    </div>
+  </div>
+
+  <div class="table-responsive">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Service Name</th>
+          <th>Cycle</th>
+          <th>Amount</th>
+          <th>Monthly Equiv</th>
+          <th>Next Renewal</th>
+          <th>Payment Mode</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="subscriptionsTableBody">
+        <tr>
+          <td colspan="8" class="empty-state">
+            <div class="spinner" style="margin: 0 auto 1rem;"></div>
+            <div class="empty-state-title">Loading subscriptions...</div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Add Subscription Modal -->
+<div class="modal-overlay" id="newSubModal">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h3 class="modal-title"><i class="fa-solid fa-arrows-rotate" style="color: var(--primary);"></i> Add New Subscription</h3>
+      <button type="button" class="modal-close-btn close-modal-btn"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+
+    <form id="newSubForm">
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label" for="subName">Service / Membership Name *</label>
+          <input type="text" id="subName" class="form-control" placeholder="e.g. Netflix, Spotify, Gym, Prime, Wi-Fi" required>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="subAmount">Billing Amount *</label>
+            <input type="number" step="0.01" min="1" id="subAmount" class="form-control" placeholder="e.g. 649" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="subBillingCycle">Billing Cycle</label>
+            <select id="subBillingCycle" class="form-control">
+              <option value="Monthly" selected>Monthly</option>
+              <option value="Yearly">Yearly</option>
+              <option value="Quarterly">Quarterly</option>
+              <option value="Weekly">Weekly</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="subNextBillingDate">Next Renewal Date *</label>
+            <input type="date" id="subNextBillingDate" class="form-control" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="subCategory">Category</label>
+            <select id="subCategory" class="form-control">
+              <option value="Entertainment">🎬 Entertainment / Streaming</option>
+              <option value="Bills">💡 Utilities / Bills / Wi-Fi</option>
+              <option value="Health">💪 Fitness / Gym / Health</option>
+              <option value="Education">📚 Software / Education / AI</option>
+              <option value="Shopping">🛍️ Shopping / Delivery</option>
+              <option value="Other">✨ Other</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="subPaymentMethod">Payment Method</label>
+            <select id="subPaymentMethod" class="form-control">
+              <option value="Credit Card">Credit Card</option>
+              <option value="UPI">UPI AutoPay</option>
+              <option value="Debit Card">Debit Card</option>
+              <option value="Bank Transfer">Net Banking</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="subStatus">Status</label>
+            <select id="subStatus" class="form-control">
+              <option value="Active" selected>Active</option>
+              <option value="Paused">Paused</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary close-modal-btn">Cancel</button>
+        <button type="submit" class="btn btn-primary">Add Subscription</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Edit Subscription Modal -->
+<div class="modal-overlay" id="editSubModal">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h3 class="modal-title">Edit Subscription</h3>
+      <button type="button" class="modal-close-btn close-modal-btn"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+
+    <form id="editSubForm">
+      <input type="hidden" id="editSubId">
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label" for="editSubName">Service Name *</label>
+          <input type="text" id="editSubName" class="form-control" required>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="editSubAmount">Amount *</label>
+            <input type="number" step="0.01" min="1" id="editSubAmount" class="form-control" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="editSubBillingCycle">Billing Cycle</label>
+            <select id="editSubBillingCycle" class="form-control">
+              <option value="Monthly">Monthly</option>
+              <option value="Yearly">Yearly</option>
+              <option value="Quarterly">Quarterly</option>
+              <option value="Weekly">Weekly</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="editSubNextBillingDate">Next Renewal Date *</label>
+            <input type="date" id="editSubNextBillingDate" class="form-control" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="editSubCategory">Category</label>
+            <select id="editSubCategory" class="form-control">
+              <option value="Entertainment">🎬 Entertainment / Streaming</option>
+              <option value="Bills">💡 Utilities / Bills / Wi-Fi</option>
+              <option value="Health">💪 Fitness / Gym / Health</option>
+              <option value="Education">📚 Software / Education / AI</option>
+              <option value="Shopping">🛍️ Shopping / Delivery</option>
+              <option value="Other">✨ Other</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="editSubPaymentMethod">Payment Method</label>
+            <select id="editSubPaymentMethod" class="form-control">
+              <option value="Credit Card">Credit Card</option>
+              <option value="UPI">UPI AutoPay</option>
+              <option value="Debit Card">Debit Card</option>
+              <option value="Bank Transfer">Net Banking</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="editSubStatus">Status</label>
+            <select id="editSubStatus" class="form-control">
+              <option value="Active">Active</option>
+              <option value="Paused">Paused</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary close-modal-btn">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save Changes</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/subscriptions.js') }}"></script>
+{% endblock %}

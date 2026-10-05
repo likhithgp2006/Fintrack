@@ -1,0 +1,138 @@
+/* Reports & Budgets Styles */
+
+.report-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.25rem;
+  margin-bottom: 2rem;
+}
+
+.report-stat-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+  text-align: center;
+}
+
+.report-stat-title {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  margin-bottom: 0.35rem;
+}
+
+.report-stat-val {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+/* Category Progress Bars */
+.progress-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+
+.progress-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.progress-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.progress-bar-bg {
+  width: 100%;
+  height: 10px;
+  background: var(--bg-body);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+}
+
+.progress-bar-fill {
+  height: 100%;
+  border-radius: var(--radius-full);
+  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Budget Cards */
+.budget-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.25rem;
+  margin-top: 1.5rem;
+}
+
+.budget-card {
+  position: relative;
+}
+
+.budget-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.budget-cat-name {
+  font-size: 1.1rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.budget-amounts {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+}
+
+.budget-alert-badge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.25rem 0.6rem;
+  border-radius: var(--radius-sm);
+}
+
+.alert-warning {
+  background: var(--warning-bg);
+  color: var(--warning);
+}
+
+.alert-danger {
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+
+.alert-ok {
+  background: var(--success-bg);
+  color: var(--success);
+}
+
+/* Print / PDF Print Media */
+@media print {
+  .sidebar, .top-navbar, .theme-toggle-btn, .mobile-toggle, .btn, .filter-toolbar {
+    display: none !important;
+  }
+  .main-wrapper {
+    margin-left: 0 !important;
+  }
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  .card {
+    box-shadow: none !important;
+    border: 1px solid #ccc !important;
+  }
+}

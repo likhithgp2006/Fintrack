@@ -1,0 +1,808 @@
+{% extends "layout.html" %}
+{% block title %}Split Bill & Live Rooms - Smart Expense Tracker{% endblock %}
+{% block page_title %}Split Bill & Shared Expenses{% endblock %}
+
+{% block content %}
+<!-- Split Bill Header -->
+<div class="dashboard-header"
+  style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;">
+  <div class="welcome-section" style="max-width: 600px;">
+    <h1 style="font-size: 1.6rem; font-weight: 800; display: flex; align-items: center; gap: 0.5rem;">
+      Split Bill & Group Rooms 🧾
+    </h1>
+    <p class="text-muted" style="margin-top: 0.25rem; font-size: 0.92rem;">
+      Split group dinners and trips, create live <strong>Split Rooms with Join Codes</strong>, and sync in real-time
+      with friends.
+    </p>
+  </div>
+  <div class="header-actions" style="display: flex; gap: 0.65rem; flex-wrap: wrap;">
+    <button type="button" class="btn btn-secondary" id="openJoinRoomModalBtn">
+      <i class="fa-solid fa-door-open" style="color: var(--primary);"></i> Join Room with Code
+    </button>
+    <button type="button" class="btn btn-secondary" id="openMyRoomsModalBtn">
+      <i class="fa-solid fa-clock-rotate-left"></i> My Split Rooms
+    </button>
+  </div>
+</div>
+
+<!-- Pending Splits Notification Banner -->
+<div id="pendingSplitsAlert"
+  style="display: none; margin-bottom: 1.5rem; background: linear-gradient(135deg, rgba(99,102,241,0.08), rgba(236,72,153,0.08)); border: 1px solid var(--primary); border-radius: var(--radius-md); padding: 1rem 1.25rem;">
+  <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem;">
+    <div style="display: flex; align-items: center; gap: 0.75rem;">
+      <div
+        style="width: 42px; height: 42px; border-radius: 50%; background: linear-gradient(135deg, #6366f1, #ec4899); color: white; display: flex; align-items: center; justify-content: center; font-size: 1.15rem; flex-shrink: 0;">
+        <i class="fa-solid fa-bell"></i>
+      </div>
+      <div>
+        <div style="font-weight: 700; font-size: 0.95rem; color: var(--text-main);" id="pendingAlertTitle">Pending Split
+          Bill Request</div>
+        <div style="font-size: 0.85rem; color: var(--text-muted);" id="pendingAlertDesc">A friend has shared a bill with
+          you.</div>
+      </div>
+    </div>
+    <div style="display: flex; gap: 0.5rem;">
+      <button type="button" class="btn btn-sm btn-primary" id="pendingAlertActionBtn">
+        <i class="fa-solid fa-receipt"></i> View & Settle Share
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="split-bill-container">
+
+  <!-- Left Side: Inputs Card -->
+  <div class="card split-calculator-card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+      <h3 style="font-size: 1.15rem; font-weight: 700; margin: 0;">
+        <i class="fa-solid fa-calculator" style="color: var(--primary);"></i> Bill Details
+      </h3>
+      <span class="badge"
+        style="background: rgba(99,102,241,0.1); color: var(--primary); font-size: 0.75rem; padding: 0.25rem 0.6rem; border-radius: 999px; font-weight: 600;">
+        <i class="fa-solid fa-bolt"></i> Live Sync Enabled
+      </span>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="billDescription">Occasion / Venue Title</label>
+      <input type="text" id="billDescription" class="form-control"
+        placeholder="e.g. Dinner at Olive Bistro, Goa Roadtrip, Pizza Party">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="billAmount">Total Bill Amount <span class="required">*</span></label>
+      <div style="position: relative;">
+        <span class="currency-symbol-addon" id="billCurrencySymbol">₹</span>
+        <input type="number" step="0.01" min="1" id="billAmount" class="form-control" placeholder="0.00"
+          style="padding-left: 2.25rem; font-size: 1.25rem; font-weight: 700;" value="2400">
+      </div>
+    </div>
+
+    <!-- Tip Selector -->
+    <div class="form-group" style="margin-top: 1.25rem;">
+      <label class="form-label">Add Tip</label>
+      <div class="tip-options-grid">
+        <button type="button" class="tip-btn active" data-tip="0">0%</button>
+        <button type="button" class="tip-btn" data-tip="5">5%</button>
+        <button type="button" class="tip-btn" data-tip="10">10%</button>
+        <button type="button" class="tip-btn" data-tip="15">15%</button>
+        <button type="button" class="tip-btn" data-tip="custom">Custom</button>
+      </div>
+      <div id="customTipGroup" style="display: none; margin-top: 0.75rem;">
+        <input type="number" step="1" min="0" max="100" id="customTipInput" class="form-control"
+          placeholder="Enter tip %">
+      </div>
+    </div>
+
+    <!-- Tax / Surcharge -->
+    <div class="form-row" style="margin-top: 1rem; display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+      <div class="form-group">
+        <label class="form-label" for="taxPercent">Tax / GST % (Optional)</label>
+        <input type="number" step="0.1" min="0" max="50" id="taxPercent" class="form-control" placeholder="e.g. 5"
+          value="0">
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="roundOption">Round Up Share</label>
+        <select id="roundOption" class="form-control">
+          <option value="none" selected>Exact Amount</option>
+          <option value="5">Round up to ₹5</option>
+          <option value="10">Round up to ₹10</option>
+          <option value="1">Round up to ₹1</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- People Counter -->
+    <div class="form-group" style="margin-top: 1.25rem;">
+      <label class="form-label">Number of People Sharing</label>
+      <div class="people-counter-wrapper">
+        <button type="button" class="counter-btn" id="decrementPeopleBtn"><i class="fa-solid fa-minus"></i></button>
+        <input type="number" id="peopleCount" min="1" max="50" value="4" class="people-number-input">
+        <button type="button" class="counter-btn" id="incrementPeopleBtn"><i class="fa-solid fa-plus"></i></button>
+      </div>
+    </div>
+
+    <!-- Split Mode Toggle -->
+    <div class="split-mode-toggle" style="margin-top: 1.25rem;">
+      <button type="button" class="mode-btn active" id="modeEqualBtn">Equal Split</button>
+      <button type="button" class="mode-btn" id="modeCustomBtn">Named Friends / Custom</button>
+    </div>
+
+    <!-- Custom / Friends List -->
+    <div id="customFriendsList" style="display: none; margin-top: 1.25rem;">
+      <div
+        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem; flex-wrap: wrap; gap: 0.5rem;">
+        <label class="form-label" style="margin: 0;">Participants & Contacts</label>
+        <div style="display: flex; gap: 0.5rem;">
+          <button type="button" class="btn btn-secondary btn-sm" id="pickFromFriendsBtn"
+            style="font-size: 0.8rem; padding: 0.3rem 0.7rem;">
+            <i class="fa-solid fa-address-book"></i> Pick from Contacts
+          </button>
+        </div>
+      </div>
+
+      <!-- Quick Add Friend by Mobile / Name -->
+      <div style="position: relative; margin-bottom: 0.75rem;">
+        <input type="text" id="quickAddInput" class="form-control form-control-sm"
+          placeholder="Search contact by Mobile Number or Name..." autocomplete="off">
+        <div id="quickSearchResults"
+          style="display: none; position: absolute; left: 0; right: 0; top: 100%; z-index: 50; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); box-shadow: 0 4px 14px rgba(0,0,0,0.1); max-height: 180px; overflow-y: auto; margin-top: 4px;">
+        </div>
+      </div>
+
+      <div id="friendsInputsContainer" style="display: flex; flex-direction: column; gap: 0.6rem;"></div>
+    </div>
+
+    <!-- Friends Picker Dropdown -->
+    <div id="friendsPickerPanel"
+      style="display: none; margin-top: 0.75rem; border: 1px solid var(--border-color); border-radius: var(--radius-md); background: var(--bg-card); max-height: 220px; overflow-y: auto;">
+      <div
+        style="padding: 0.65rem 0.85rem; border-bottom: 1px solid var(--border-color); font-size: 0.82rem; font-weight: 600; color: var(--text-muted); display: flex; justify-content: space-between;">
+        <span>SELECT FROM CONTACTS</span>
+        <a href="/friends" style="font-size: 0.78rem; color: var(--primary);">+ New Contact</a>
+      </div>
+      <div id="friendsPickerList" style="padding: 0.5rem;"></div>
+    </div>
+
+  </div>
+
+  <!-- Right Side: Live Calculation Summary Card -->
+  <div class="card split-summary-card">
+    <div class="summary-hero-badge">
+      <span class="hero-label">EACH PERSON PAYS</span>
+      <h2 class="hero-amount amount-income" id="summaryPerPerson">₹600.00</h2>
+      <span class="hero-subtext" id="summaryHeroSubtitle">Divided equally among 4 friends</span>
+    </div>
+
+    <div class="bill-breakdown-table">
+      <div class="breakdown-row">
+        <span class="text-muted">Base Bill</span>
+        <strong id="breakdownBaseBill">₹2,400.00</strong>
+      </div>
+      <div class="breakdown-row">
+        <span class="text-muted">Tip (<span id="breakdownTipPct">0%</span>)</span>
+        <span id="breakdownTipAmount">₹0.00</span>
+      </div>
+      <div class="breakdown-row">
+        <span class="text-muted">Tax / Charges (<span id="breakdownTaxPct">0%</span>)</span>
+        <span id="breakdownTaxAmount">₹0.00</span>
+      </div>
+      <div class="breakdown-row"
+        style="border-top: 2px solid var(--border-color); padding-top: 0.75rem; font-size: 1.05rem;">
+        <strong>Total Bill Payable</strong>
+        <strong class="amount-expense" id="breakdownTotalBill">₹2,400.00</strong>
+      </div>
+    </div>
+
+    <!-- Individual Breakdown Box -->
+    <div class="individual-list-box" id="individualListBox" style="margin-top: 1.25rem;">
+      <h4
+        style="font-size: 0.9rem; font-weight: 700; margin-bottom: 0.6rem; color: var(--text-muted); text-transform: uppercase;">
+        Share Breakdown
+      </h4>
+      <div id="individualShareContainer"
+        style="display: flex; flex-direction: column; gap: 0.5rem; max-height: 200px; overflow-y: auto;"></div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div style="margin-top: 1.5rem; display: flex; flex-direction: column; gap: 0.75rem;">
+      <!-- Main Split Room Creator Button -->
+      <button type="button" class="btn btn-primary" id="createSplitRoomBtn"
+        style="width: 100%; justify-content: center; font-size: 0.98rem; padding: 0.75rem 1rem;">
+        <i class="fa-solid fa-people-roof"></i> Create Live Split Room & Share
+      </button>
+
+      <button type="button" class="btn btn-secondary" id="copySummaryBtn" style="width: 100%; justify-content: center;">
+        <i class="fa-solid fa-copy"></i> Copy WhatsApp Summary
+      </button>
+
+      <button type="button" class="btn btn-secondary" id="recordMyShareBtn"
+        style="width: 100%; justify-content: center;">
+        <i class="fa-solid fa-receipt"></i> Record My Share as Expense
+      </button>
+    </div>
+
+  </div>
+
+</div>
+
+<!-- ============================================================ -->
+<!-- MODAL: LIVE SPLIT ROOM VIEW (Active Room Details & Settle)   -->
+<!-- ============================================================ -->
+<div class="modal-backdrop" id="splitRoomModal"
+  style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 1050; align-items: center; justify-content: center; padding: 1.5rem;">
+  <div class="card"
+    style="width: 100%; max-width: 600px; max-height: 90vh; overflow-y: auto; padding: 2rem; position: relative;">
+
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.25rem;">
+      <div>
+        <span class="badge"
+          style="background: var(--primary); color: #fff; font-size: 0.75rem; padding: 0.2rem 0.6rem; border-radius: 4px; font-weight: 700;">LIVE
+          SPLIT ROOM</span>
+        <h2 id="modalRoomTitle" style="font-size: 1.45rem; font-weight: 800; margin: 0.4rem 0 0.2rem;">Dinner at Bistro
+        </h2>
+        <p class="text-muted" style="font-size: 0.85rem; margin: 0;">Hosted by <strong id="modalRoomCreator"
+            style="color: var(--text-main);"></strong> &bull; <span id="modalRoomDate"></span></p>
+      </div>
+      <button type="button" class="btn btn-secondary btn-sm" id="closeSplitRoomModal"
+        style="border-radius: 50%; width: 34px; height: 34px; padding: 0; display: flex; align-items: center; justify-content: center;">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+
+    <!-- Room Code Share Card -->
+    <div
+      style="background: var(--bg-body); border: 2px dashed var(--primary); border-radius: var(--radius-md); padding: 1rem 1.25rem; margin-bottom: 1.5rem; text-align: center;">
+      <div
+        style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.25rem;">
+        ROOM JOIN CODE
+      </div>
+      <div id="modalRoomCodeDisplay"
+        style="font-size: 2rem; font-weight: 800; letter-spacing: 4px; color: var(--primary); font-family: monospace;">
+        ROOM-0000
+      </div>
+      <p style="font-size: 0.82rem; color: var(--text-muted); margin: 0.35rem 0 0.75rem;">
+        Friends on this site can enter this code to join and view their share!
+      </p>
+      <div style="display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap;">
+        <button type="button" class="btn btn-secondary btn-sm" id="copyRoomCodeBtn">
+          <i class="fa-solid fa-copy"></i> Copy Code
+        </button>
+        <button type="button" class="btn btn-secondary btn-sm" id="copyRoomLinkBtn">
+          <i class="fa-solid fa-link"></i> Copy Link
+        </button>
+        <a href="#" target="_blank" class="btn btn-success btn-sm" id="whatsappShareBtn">
+          <i class="fa-brands fa-whatsapp"></i> Share on WhatsApp
+        </a>
+      </div>
+    </div>
+
+    <!-- Room Financial Snapshot -->
+    <div
+      style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem; background: var(--bg-card-alt, rgba(99,102,241,0.04)); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 0.85rem 1rem;">
+      <div>
+        <span class="text-muted" style="font-size: 0.8rem;">TOTAL BILL</span>
+        <div id="modalRoomTotal" style="font-size: 1.2rem; font-weight: 700; color: var(--danger);">₹0.00</div>
+      </div>
+      <div>
+        <span class="text-muted" style="font-size: 0.8rem;">EACH PERSON'S SHARE</span>
+        <div id="modalRoomPerPerson" style="font-size: 1.2rem; font-weight: 700; color: var(--primary);">₹0.00</div>
+      </div>
+    </div>
+
+    <!-- Participants & Settlement Table -->
+    <div style="margin-bottom: 1.5rem;">
+      <h4
+        style="font-size: 0.92rem; font-weight: 700; margin-bottom: 0.75rem; text-transform: uppercase; color: var(--text-muted);">
+        Participants & Payment Status
+      </h4>
+      <div id="modalMembersList" style="display: flex; flex-direction: column; gap: 0.65rem;"></div>
+    </div>
+
+    <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
+      <button type="button" class="btn btn-secondary" id="doneSplitRoomBtn">Close</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- MODAL: JOIN ROOM WITH CODE                                   -->
+<!-- ============================================================ -->
+<div class="modal-backdrop" id="joinRoomModal"
+  style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 1050; align-items: center; justify-content: center; padding: 1.5rem;">
+  <div class="card" style="width: 100%; max-width: 440px; padding: 2rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+      <h3 style="font-size: 1.2rem; font-weight: 700; margin: 0;">
+        <i class="fa-solid fa-door-open" style="color: var(--primary);"></i> Join Split Room
+      </h3>
+      <button type="button" class="btn btn-secondary btn-sm" id="closeJoinRoomModal"
+        style="border-radius: 50%; width: 32px; height: 32px; padding: 0;">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+    <p class="text-muted" style="font-size: 0.88rem; margin-bottom: 1.25rem;">
+      Enter the 6-character room code shared by your friend (e.g. <code>ROOM-8492</code>) to view the bill and settle
+      your share.
+    </p>
+
+    <form id="joinRoomForm">
+      <div class="form-group" style="text-align: center;">
+        <input type="text" id="joinRoomCodeInput" class="form-control" placeholder="ROOM-0000" maxlength="12" required
+          style="text-align: center; font-size: 1.5rem; font-weight: 800; font-family: monospace; letter-spacing: 3px; padding: 0.6rem; text-transform: uppercase;">
+      </div>
+      <button type="submit" id="submitJoinRoomBtn" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">
+        <i class="fa-solid fa-arrow-right-to-bracket"></i> Open Split Room
+      </button>
+    </form>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- MODAL: MY SPLIT ROOMS (History / Active)                     -->
+<!-- ============================================================ -->
+<div class="modal-backdrop" id="myRoomsModal"
+  style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 1050; align-items: center; justify-content: center; padding: 1.5rem;">
+  <div class="card" style="width: 100%; max-width: 520px; max-height: 85vh; overflow-y: auto; padding: 2rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+      <h3 style="font-size: 1.2rem; font-weight: 700; margin: 0;">
+        <i class="fa-solid fa-clock-rotate-left" style="color: var(--primary);"></i> My Split Rooms
+      </h3>
+      <button type="button" class="btn btn-secondary btn-sm" id="closeMyRoomsModal"
+        style="border-radius: 50%; width: 32px; height: 32px; padding: 0;">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+
+    <div id="myRoomsListContainer" style="display: flex; flex-direction: column; gap: 0.75rem;">
+      <div style="text-align: center; padding: 1.5rem; color: var(--text-muted);">
+        <i class="fa-solid fa-spinner fa-spin"></i> Loading rooms...
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/split-bill.js') }}"></script>
+<script>
+  // --- ADVANCED SPLIT ROOM & CONTACTS INTEGRATION ---
+  let registeredFriends = [];
+  let selectedFriendIds = new Set();
+  let currentOpenRoomCode = null;
+
+  // Initialize on page load
+  document.addEventListener('DOMContentLoaded', () => {
+    loadFriendsForPicker();
+    checkPendingSplitsNotification();
+    checkUrlForRoomCode();
+
+    // Modal Open/Close wiring
+    const joinModal = document.getElementById('joinRoomModal');
+    const myRoomsModal = document.getElementById('myRoomsModal');
+    const roomViewModal = document.getElementById('splitRoomModal');
+
+    document.getElementById('openJoinRoomModalBtn').addEventListener('click', () => {
+      joinModal.style.display = 'flex';
+      document.getElementById('joinRoomCodeInput').value = '';
+      setTimeout(() => document.getElementById('joinRoomCodeInput').focus(), 100);
+    });
+    document.getElementById('closeJoinRoomModal').addEventListener('click', () => joinModal.style.display = 'none');
+
+    document.getElementById('openMyRoomsModalBtn').addEventListener('click', () => {
+      myRoomsModal.style.display = 'flex';
+      loadMySplitRooms();
+    });
+    document.getElementById('closeMyRoomsModal').addEventListener('click', () => myRoomsModal.style.display = 'none');
+
+    document.getElementById('closeSplitRoomModal').addEventListener('click', () => roomViewModal.style.display = 'none');
+    document.getElementById('doneSplitRoomBtn').addEventListener('click', () => roomViewModal.style.display = 'none');
+
+    // Join form submit
+    document.getElementById('joinRoomForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      let code = document.getElementById('joinRoomCodeInput').value.trim().toUpperCase();
+      if (!code) return;
+      if (!code.startsWith('ROOM-') && code.length >= 4) {
+        code = 'ROOM-' + code;
+      }
+      joinModal.style.display = 'none';
+      openSplitRoomByCode(code);
+    });
+
+    // Copy buttons inside room modal
+    document.getElementById('copyRoomCodeBtn').addEventListener('click', () => {
+      if (currentOpenRoomCode) {
+        navigator.clipboard.writeText(currentOpenRoomCode);
+        showToast('Copied!', `Room code ${currentOpenRoomCode} copied to clipboard.`, 'success');
+      }
+    });
+
+    document.getElementById('copyRoomLinkBtn').addEventListener('click', () => {
+      if (currentOpenRoomCode) {
+        const url = `${window.location.origin}/split-bill?room=${currentOpenRoomCode}`;
+        navigator.clipboard.writeText(url);
+        showToast('Copied!', 'Direct room link copied to clipboard.', 'success');
+      }
+    });
+
+    // Create Live Split Room button click
+    document.getElementById('createSplitRoomBtn').addEventListener('click', handleCreateSplitRoom);
+
+    // Quick contact search by mobile / name
+    setupQuickContactSearch();
+  });
+
+  // --- URL check for auto-opening room: ?room=ROOM-XXXX ---
+  function checkUrlForRoomCode() {
+    const params = new URLSearchParams(window.location.search);
+    const roomParam = params.get('room');
+    if (roomParam) {
+      openSplitRoomByCode(roomParam.trim().toUpperCase());
+    }
+  }
+
+  // --- Check Pending Notifications on Load ---
+  async function checkPendingSplitsNotification() {
+    try {
+      const res = await fetch('/api/split-notifications');
+      const data = await res.json();
+      if (data.success && data.count > 0) {
+        const first = data.notifications[0];
+        const alertBox = document.getElementById('pendingSplitsAlert');
+        document.getElementById('pendingAlertTitle').textContent = `Split Bill Request: ₹${parseFloat(first.amount).toFixed(2)}`;
+        document.getElementById('pendingAlertDesc').textContent = `${first.payer_name} requested payment for: "${first.description}".`;
+
+        const btn = document.getElementById('pendingAlertActionBtn');
+        btn.onclick = () => {
+          if (first.room_code) {
+            openSplitRoomByCode(first.room_code);
+          } else {
+            window.location.href = '/friends';
+          }
+        };
+        alertBox.style.display = 'block';
+      }
+    } catch (e) { }
+  }
+
+  // --- Load Friends for Picker Dropdown ---
+  async function loadFriendsForPicker() {
+    try {
+      const res = await fetch('/api/friends');
+      const data = await res.json();
+      if (data.success) registeredFriends = data.friends;
+    } catch (e) { }
+  }
+
+  document.getElementById('pickFromFriendsBtn').addEventListener('click', () => {
+    const panel = document.getElementById('friendsPickerPanel');
+    const list = document.getElementById('friendsPickerList');
+    if (panel.style.display !== 'none') { panel.style.display = 'none'; return; }
+
+    list.innerHTML = '';
+    if (registeredFriends.length === 0) {
+      list.innerHTML = '<p style="padding:0.75rem;font-size:0.85rem;color:var(--text-muted);">No contacts saved yet. <a href="/friends" style="color:var(--primary); font-weight:600;">Add contacts by mobile number →</a></p>';
+    } else {
+      registeredFriends.forEach(f => {
+        const item = document.createElement('label');
+        item.style.cssText = 'display:flex;align-items:center;gap:0.75rem;padding:0.6rem 0.75rem;cursor:pointer;border-radius:var(--radius-sm);transition:background 0.15s;';
+        item.onmouseenter = () => item.style.background = 'var(--border-color)';
+        item.onmouseleave = () => item.style.background = '';
+        item.innerHTML = `
+        <input type="checkbox" value="${f.id}" data-name="${f.name}" data-phone="${f.phone || ''}" ${selectedFriendIds.has(f.id) ? 'checked' : ''} style="width:16px;height:16px;accent-color:var(--primary);">
+        <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.85rem;flex-shrink:0;">${f.name[0].toUpperCase()}</div>
+        <div>
+          <div style="font-weight:600;font-size:0.88rem;">${f.name}</div>
+          <div style="font-size:0.75rem;color:var(--text-muted);">${f.phone ? '📱 +91 ' + f.phone : f.email}</div>
+        </div>`;
+        item.querySelector('input').addEventListener('change', (e) => {
+          const name = e.target.dataset.name;
+          const phone = e.target.dataset.phone;
+          if (e.target.checked) {
+            selectedFriendIds.add(e.target.value);
+            addFriendRow(e.target.value, name, phone);
+          } else {
+            selectedFriendIds.delete(e.target.value);
+            document.getElementById('friend-row-' + e.target.value)?.remove();
+          }
+          updatePeopleCountFromRows();
+        });
+        list.appendChild(item);
+      });
+    }
+    panel.style.display = 'block';
+  });
+
+  // --- Quick Search & Add by Mobile or Name ---
+  function setupQuickContactSearch() {
+    const input = document.getElementById('quickAddInput');
+    const results = document.getElementById('quickSearchResults');
+    if (!input || !results) return;
+
+    let timer = null;
+    input.addEventListener('input', () => {
+      clearTimeout(timer);
+      const q = input.value.trim();
+      if (q.length < 2) { results.style.display = 'none'; return; }
+
+      timer = setTimeout(async () => {
+        try {
+          const res = await fetch(`/api/users/search?q=${encodeURIComponent(q)}`);
+          const data = await res.json();
+          if (data.success && data.users.length > 0) {
+            results.innerHTML = '';
+            data.users.forEach(u => {
+              const row = document.createElement('div');
+              row.style.cssText = 'padding:0.6rem 0.85rem;cursor:pointer;display:flex;align-items:center;gap:0.75rem;border-bottom:1px solid var(--border-color);';
+              row.onmouseenter = () => row.style.background = 'var(--border-color)';
+              row.onmouseleave = () => row.style.background = '';
+              row.innerHTML = `
+              <div style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.75rem;">${u.name[0].toUpperCase()}</div>
+              <div style="flex:1;">
+                <div style="font-weight:600;font-size:0.84rem;">${u.name}</div>
+                <div style="font-size:0.75rem;color:var(--text-muted);">${u.phone ? '📱 +91 ' + u.phone : u.email}</div>
+              </div>
+              <span class="badge" style="background:var(--primary);color:#fff;font-size:0.7rem;padding:0.15rem 0.4rem;border-radius:4px;">Add</span>
+            `;
+              row.addEventListener('click', () => {
+                addFriendRow(u.id, u.name, u.phone || u.email);
+                selectedFriendIds.add(u.id);
+                results.style.display = 'none';
+                input.value = '';
+                updatePeopleCountFromRows();
+              });
+              results.appendChild(row);
+            });
+            results.style.display = 'block';
+          } else {
+            results.innerHTML = `<div style="padding:0.75rem;font-size:0.82rem;color:var(--text-muted);">No registered user found for "${q}".</div>`;
+            results.style.display = 'block';
+          }
+        } catch (e) { }
+      }, 250);
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('#quickAddInput') && !e.target.closest('#quickSearchResults')) {
+        results.style.display = 'none';
+      }
+    });
+  }
+
+  function addFriendRow(fid, name, contact = '') {
+    const container = document.getElementById('friendsInputsContainer');
+    if (document.getElementById('friend-row-' + fid)) return;
+    const row = document.createElement('div');
+    row.id = 'friend-row-' + fid;
+    row.dataset.friendId = fid;
+    row.dataset.friendContact = contact;
+    row.style.cssText = 'display:flex;align-items:center;gap:0.5rem;';
+    row.innerHTML = `
+    <div style="width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.8rem;flex-shrink:0;">${name[0].toUpperCase()}</div>
+    <div style="flex:1;">
+      <input type="text" class="form-control friend-name-input form-control-sm" value="${name}" placeholder="Name" readonly>
+    </div>
+    <input type="number" class="form-control friend-share-input form-control-sm" placeholder="Share ₹" style="width:95px;">
+    <button type="button" onclick="removeFriendRow('${fid}')" style="background:none;border:none;color:var(--text-muted);cursor:pointer;padding:0.25rem;"><i class="fa-solid fa-xmark"></i></button>`;
+    container.appendChild(row);
+  }
+
+  window.removeFriendRow = (fid) => {
+    document.getElementById('friend-row-' + fid)?.remove();
+    selectedFriendIds.delete(fid);
+    const panel = document.getElementById('friendsPickerPanel');
+    panel.querySelector(`input[value="${fid}"]`) && (panel.querySelector(`input[value="${fid}"]`).checked = false);
+    updatePeopleCountFromRows();
+  };
+
+  function updatePeopleCountFromRows() {
+    const rows = document.querySelectorAll('#friendsInputsContainer [id^="friend-row-"]');
+    if (rows.length > 0) {
+      document.getElementById('peopleCount').value = rows.length + 1; // +1 for me
+      if (typeof calculateSplit === 'function') calculateSplit();
+    }
+  }
+
+  // --- CREATE LIVE SPLIT ROOM & SHARE ---
+  async function handleCreateSplitRoom() {
+    const desc = document.getElementById('billDescription').value.trim() || 'Group Dinner';
+    const totalAmount = parseFloat(document.getElementById('billAmount').value) || 0;
+    if (totalAmount <= 0) {
+      showToast('Missing Amount', 'Please enter a valid bill amount.', 'warning');
+      return;
+    }
+
+    const peopleCount = parseInt(document.getElementById('peopleCount').value) || 2;
+    const tipPct = parseFloat(document.getElementById('breakdownTipPct').textContent) || 0;
+    const taxPct = parseFloat(document.getElementById('taxPercent').value) || 0;
+
+    // Build members list
+    let members = [];
+    const friendRows = document.querySelectorAll('#friendsInputsContainer [id^="friend-row-"]');
+
+    if (friendRows.length > 0) {
+      // Creator row
+      members.push({
+        name: 'You (Host)',
+        contact: '',
+        share_amount: totalAmount / (friendRows.length + 1)
+      });
+      // Friend rows
+      friendRows.forEach(row => {
+        const fid = row.dataset.friendId;
+        const contact = row.dataset.friendContact || '';
+        const name = row.querySelector('.friend-name-input').value.trim();
+        const customShare = parseFloat(row.querySelector('.friend-share-input').value);
+        members.push({
+          name: name,
+          contact: contact,
+          user_id: fid.startsWith('temp_') ? '' : fid,
+          share_amount: customShare > 0 ? customShare : (totalAmount / (friendRows.length + 1))
+        });
+      });
+    } else {
+      // Equal split with placeholder names
+      const shareEach = totalAmount / peopleCount;
+      members.push({ name: 'You (Host)', contact: '', share_amount: shareEach });
+      for (let i = 1; i < peopleCount; i++) {
+        members.push({ name: `Friend ${i}`, contact: '', share_amount: shareEach });
+      }
+    }
+
+    const btn = document.getElementById('createSplitRoomBtn');
+    btn.disabled = true;
+    btn.innerHTML = `<div class="spinner" style="width:16px;height:16px;border-width:2px;display:inline-block;"></div> Generating Room...`;
+
+    try {
+      const res = await fetch('/api/split-rooms', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: desc,
+          total_amount: totalAmount,
+          tip_pct: tipPct,
+          tax_pct: taxPct,
+          split_type: 'equal',
+          members: members
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast('Room Created! 🎉', `Split Room ${data.room_code} is live!`, 'success');
+        openSplitRoomByCode(data.room_code);
+      } else {
+        showToast('Error', data.message || 'Could not create split room.', 'danger');
+      }
+    } catch (e) {
+      showToast('Network Error', 'Server connection error.', 'danger');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = `<i class="fa-solid fa-people-roof"></i> Create Live Split Room & Share`;
+    }
+  }
+
+  // --- OPEN LIVE SPLIT ROOM MODAL BY CODE ---
+  async function openSplitRoomByCode(roomCode) {
+    try {
+      const res = await fetch(`/api/split-rooms/${roomCode}`);
+      const data = await res.json();
+      if (!data.success) {
+        showToast('Room Not Found', data.message || `No room found for ${roomCode}`, 'danger');
+        return;
+      }
+
+      currentOpenRoomCode = data.room.room_code;
+      const modal = document.getElementById('splitRoomModal');
+
+      document.getElementById('modalRoomTitle').textContent = data.room.title || 'Group Split';
+      document.getElementById('modalRoomCreator').textContent = data.room.creator_name || 'Host';
+      document.getElementById('modalRoomDate').textContent = data.room.created_at || '';
+      document.getElementById('modalRoomCodeDisplay').textContent = data.room.room_code;
+
+      const totalVal = parseFloat(data.room.total_amount) || 0;
+      const perPerson = totalVal / (data.members.length || 1);
+      document.getElementById('modalRoomTotal').textContent = '₹' + totalVal.toLocaleString('en-IN', { minimumFractionDigits: 2 });
+      document.getElementById('modalRoomPerPerson').textContent = '₹' + perPerson.toLocaleString('en-IN', { minimumFractionDigits: 2 });
+
+      // WhatsApp Share Link
+      const waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(
+        `🧾 Split Bill Details for "${data.room.title}":\nTotal: ₹${totalVal.toFixed(2)}\nYour Share: ₹${perPerson.toFixed(2)}\n\nJoin and settle live here: ${window.location.origin}/split-bill?room=${data.room.room_code}`
+      )}`;
+      document.getElementById('whatsappShareBtn').href = waUrl;
+
+      // Render Members
+      const list = document.getElementById('modalMembersList');
+      list.innerHTML = '';
+      data.members.forEach(m => {
+        const isSettled = (m.status === 'settled');
+        const shareVal = parseFloat(m.share_amount || perPerson);
+        const isMe = m.is_current_user;
+
+        const item = document.createElement('div');
+        item.style.cssText = `display:flex;align-items:center;justify-content:space-between;gap:0.75rem;padding:0.75rem 1rem;border-radius:var(--radius-md);background:${isSettled ? 'rgba(16,185,129,0.06)' : 'var(--bg-card)'};border:1px solid ${isSettled ? 'var(--success)' : 'var(--border-color)'};`;
+
+        item.innerHTML = `
+        <div style="display:flex;align-items:center;gap:0.75rem;">
+          <div style="width:36px;height:36px;border-radius:50%;background:${isSettled ? 'var(--success)' : 'linear-gradient(135deg,#6366f1,#8b5cf6)'};color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;">
+            ${isSettled ? '<i class="fa-solid fa-check"></i>' : m.member_name[0].toUpperCase()}
+          </div>
+          <div>
+            <div style="font-weight:700;font-size:0.92rem;">
+              ${m.member_name} ${isMe ? '<span class="badge" style="background:var(--primary);color:#fff;font-size:0.65rem;padding:0.1rem 0.35rem;border-radius:4px;">YOU</span>' : ''}
+            </div>
+            <div style="font-size:0.75rem;color:var(--text-muted);">${m.member_contact ? '📱 ' + m.member_contact : ''}</div>
+          </div>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:0.75rem;">
+          <strong style="font-size:1.05rem;color:var(--text-main);">₹${shareVal.toFixed(2)}</strong>
+          ${isSettled
+            ? '<span class="badge" style="background:var(--success);color:#fff;font-size:0.75rem;padding:0.25rem 0.55rem;border-radius:999px;"><i class="fa-solid fa-check"></i> Paid</span>'
+            : `<button type="button" class="btn btn-sm btn-outline" style="border:1px solid var(--success);color:var(--success);padding:0.2rem 0.65rem;font-size:0.78rem;" onclick="settleRoomMember('${data.room.room_code}', '${m.id}')">
+                <i class="fa-solid fa-check"></i> Mark Paid
+               </button>`
+          }
+        </div>
+      `;
+        list.appendChild(item);
+      });
+
+      modal.style.display = 'flex';
+    } catch (e) {
+      showToast('Error', 'Unable to reach server.', 'danger');
+    }
+  }
+
+  // Settle member inside room
+  window.settleRoomMember = async (roomCode, memberId) => {
+    try {
+      const res = await fetch(`/api/split-rooms/${roomCode}/settle`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ member_id: memberId })
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast('Settled! ✅', data.message, 'success');
+        openSplitRoomByCode(roomCode);
+      } else {
+        showToast('Error', data.message, 'danger');
+      }
+    } catch (e) { }
+  };
+
+  // --- LOAD MY SPLIT ROOMS MODAL ---
+  async function loadMySplitRooms() {
+    const container = document.getElementById('myRoomsListContainer');
+    try {
+      const res = await fetch('/api/split-rooms/my-rooms');
+      const data = await res.json();
+      if (data.success && data.rooms.length > 0) {
+        container.innerHTML = '';
+        data.rooms.forEach(r => {
+          const item = document.createElement('div');
+          item.style.cssText = 'padding:0.85rem 1rem;background:var(--bg-body);border:1px solid var(--border-color);border-radius:var(--radius-md);display:flex;align-items:center;justify-content:space-between;gap:0.75rem;';
+          item.innerHTML = `
+          <div>
+            <div style="font-weight:700;font-size:0.95rem;color:var(--text-main);">${r.title}</div>
+            <div style="font-size:0.78rem;color:var(--text-muted);margin-top:2px;">
+              Code: <strong style="color:var(--primary);font-family:monospace;">${r.room_code}</strong> &bull; Total: ₹${parseFloat(r.total_amount).toFixed(2)}
+            </div>
+          </div>
+          <button type="button" class="btn btn-sm btn-primary" onclick="document.getElementById('myRoomsModal').style.display='none';openSplitRoomByCode('${r.room_code}')">
+            <i class="fa-solid fa-arrow-up-right-from-square"></i> Open
+          </button>
+        `;
+          container.appendChild(item);
+        });
+      } else {
+        container.innerHTML = '<div style="text-align:center;padding:1.5rem;color:var(--text-muted);font-size:0.9rem;">No split rooms found yet. Create one using the calculator!</div>';
+      }
+    } catch (e) {
+      container.innerHTML = '<div style="color:var(--danger);padding:1rem;">Failed to load rooms.</div>';
+    }
+  }
+</script>
+{% endblock %}

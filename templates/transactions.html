@@ -1,0 +1,199 @@
+{% extends "layout.html" %}
+
+{% block title %}Transactions - Smart Expense Tracker{% endblock %}
+{% block page_title %}Transactions History{% endblock %}
+
+{% block content %}
+<!-- Filter & Search Toolbar -->
+<div class="filter-toolbar">
+  <div class="search-filter-row">
+    
+    <!-- Search Box -->
+    <div class="search-box">
+      <i class="fa-solid fa-magnifying-glass"></i>
+      <input type="text" id="tableSearchInput" class="form-control" placeholder="Search by description, category, payment method or notes...">
+    </div>
+
+    <button type="button" class="btn btn-secondary" id="toggleFilterBtn">
+      <i class="fa-solid fa-filter"></i> Filters
+    </button>
+
+    <button type="button" class="btn btn-secondary trigger-csv-import" title="Bulk Import CSV Transactions">
+      <i class="fa-solid fa-file-import"></i> Import CSV
+    </button>
+
+    <a href="/api/export/csv" class="btn btn-secondary" title="Export current dataset to CSV">
+      <i class="fa-solid fa-file-csv"></i> Export CSV
+    </a>
+
+    <a href="{{ url_for('add_expense_page') }}" class="btn btn-primary">
+      <i class="fa-solid fa-plus"></i> Add New
+    </a>
+  </div>
+
+  <!-- Collapsible Filter Drawer -->
+  <form id="filterForm" class="filter-inputs-collapsible" id="filterDrawer" style="display: none;">
+    <div class="form-group">
+      <label class="form-label">Category</label>
+      <select id="filterCategory" class="form-control">
+        <option value="">All Categories</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Type</label>
+      <select id="filterType" class="form-control">
+        <option value="">All Types</option>
+        <option value="Expense">Expense</option>
+        <option value="Income">Income</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Payment Method</label>
+      <select id="filterPaymentMethod" class="form-control">
+        <option value="">All Methods</option>
+        <option value="UPI">UPI</option>
+        <option value="Cash">Cash</option>
+        <option value="Debit Card">Debit Card</option>
+        <option value="Credit Card">Credit Card</option>
+        <option value="Bank Transfer">Bank Transfer</option>
+        <option value="Net Banking">Net Banking</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Start Date</label>
+      <input type="date" id="filterStartDate" class="form-control">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">End Date</label>
+      <input type="date" id="filterEndDate" class="form-control">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Min Amount (₹)</label>
+      <input type="number" id="filterMinAmount" class="form-control" placeholder="0">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Max Amount (₹)</label>
+      <input type="number" id="filterMaxAmount" class="form-control" placeholder="100000">
+    </div>
+
+    <div style="grid-column: 1 / -1; display: flex; gap: 0.75rem; justify-content: flex-end; margin-top: 0.5rem;">
+      <button type="button" class="btn btn-secondary btn-sm" id="resetFilterBtn">Reset Filters</button>
+      <button type="submit" class="btn btn-primary btn-sm">Apply Filters</button>
+    </div>
+  </form>
+</div>
+
+<!-- Filter Summary Strip -->
+<div style="display: flex; gap: 1.5rem; margin-bottom: 1rem; padding: 0 0.5rem; font-size: 0.9rem;">
+  <div>Filtered Income: <strong id="filteredTotalIncome" class="amount-income">₹0.00</strong></div>
+  <div>Filtered Expense: <strong id="filteredTotalExpense" class="amount-expense">₹0.00</strong></div>
+</div>
+
+<!-- Transactions Data Table -->
+<div class="table-responsive">
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th class="sortable" onclick="handleSort('date')">Date <i class="fa-solid fa-sort"></i></th>
+        <th class="sortable" onclick="handleSort('description')">Description <i class="fa-solid fa-sort"></i></th>
+        <th class="sortable" onclick="handleSort('category')">Category <i class="fa-solid fa-sort"></i></th>
+        <th>Type</th>
+        <th>Payment Method</th>
+        <th class="sortable" onclick="handleSort('amount')">Amount <i class="fa-solid fa-sort"></i></th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody id="transactionsTableBody">
+      <tr>
+        <td colspan="7" class="empty-state">
+          <div class="spinner" style="margin: 0 auto 1rem;"></div>
+          <div class="empty-state-title">Loading transactions...</div>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- Pagination Toolbar -->
+<div class="pagination-wrapper">
+  <div class="pagination-info" id="paginationInfo">Showing 0 transactions</div>
+  <div class="pagination-controls" id="paginationControls"></div>
+</div>
+
+<!-- Edit Transaction Modal -->
+<div class="modal-overlay" id="editTransactionModal">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h3 class="modal-title">Edit Transaction</h3>
+      <button type="button" class="modal-close-btn close-modal-btn"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    
+    <form id="editTransactionForm">
+      <div class="modal-body">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="editExpenseDate">Date</label>
+            <input type="date" id="editExpenseDate" class="form-control" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="editExpenseAmount">Amount (₹)</label>
+            <input type="number" id="editExpenseAmount" class="form-control" step="0.01" min="0.01" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="editExpenseDescription">Description</label>
+          <input type="text" id="editExpenseDescription" class="form-control" required>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="editExpenseCategory">Category</label>
+            <select id="editExpenseCategory" class="form-control" required></select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="editExpenseType">Type</label>
+            <select id="editExpenseType" class="form-control" required>
+              <option value="Expense">Expense</option>
+              <option value="Income">Income</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="editExpensePaymentMethod">Payment Method</label>
+          <select id="editExpensePaymentMethod" class="form-control" required>
+            <option value="UPI">UPI</option>
+            <option value="Cash">Cash</option>
+            <option value="Debit Card">Debit Card</option>
+            <option value="Credit Card">Credit Card</option>
+            <option value="Bank Transfer">Bank Transfer</option>
+            <option value="Net Banking">Net Banking</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="editExpenseNotes">Notes</label>
+          <textarea id="editExpenseNotes" class="form-control"></textarea>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary close-modal-btn">Cancel</button>
+        <button type="submit" class="btn btn-primary"><i class="fa-solid fa-floppy-disk"></i> Save Changes</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/transactions.js') }}"></script>
+{% endblock %}

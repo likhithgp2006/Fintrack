@@ -1,0 +1,161 @@
+{% extends "layout.html" %}
+
+{% block public_content %}
+<div style="min-height: 100vh; background: var(--bg-body); display: flex; align-items: center; justify-content: center; padding: 1.5rem;">
+  
+  <div class="card" style="width: 100%; max-width: 480px; padding: 2.5rem 2rem;">
+    
+    <div style="text-align: center; margin-bottom: 2rem;">
+      <div class="logo-icon" style="margin: 0 auto 1rem; width: 52px; height: 52px; font-size: 1.6rem;">
+        <i class="fa-solid fa-user-plus"></i>
+      </div>
+      <h2 style="font-size: 1.6rem; font-weight: 700; margin-bottom: 0.35rem;">Create Account</h2>
+      <p class="text-muted" style="font-size: 0.9rem;">Join Smart Expense Tracker and start budgeting today</p>
+    </div>
+
+    <form id="registerForm">
+      <div class="form-group">
+        <label class="form-label" for="regName">Full Name <span class="required">*</span></label>
+        <input type="text" id="regName" class="form-control" placeholder="e.g. Likhith Kumar" required autocomplete="name">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="regEmail">Email Address <span class="required">*</span></label>
+        <input type="email" id="regEmail" class="form-control" placeholder="name@example.com" required autocomplete="email">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="regPhone">Mobile Number (for SMS OTP) <span class="required">*</span></label>
+        <input type="tel" id="regPhone" class="form-control" placeholder="10-digit mobile number (e.g. 9876543210)" required maxlength="10" pattern="[0-9]{10}" autocomplete="tel">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="regPassword">Password <span class="required">*</span></label>
+        <div class="password-field-wrapper">
+          <input type="password" id="regPassword" class="form-control" placeholder="At least 6 characters" required minlength="6" autocomplete="new-password">
+          <button type="button" class="password-toggle-btn" id="toggleRegPassword" title="Show/Hide Password">
+            <i class="fa-solid fa-eye" id="regEyeIcon"></i>
+          </button>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="regConfirmPassword">Confirm Password <span class="required">*</span></label>
+        <div class="password-field-wrapper">
+          <input type="password" id="regConfirmPassword" class="form-control" placeholder="Re-enter password" required autocomplete="new-password">
+          <button type="button" class="password-toggle-btn" id="toggleRegConfirmPassword" title="Show/Hide Password">
+            <i class="fa-solid fa-eye" id="regConfirmEyeIcon"></i>
+          </button>
+        </div>
+      </div>
+
+      <button type="submit" id="regSubmitBtn" class="btn btn-primary" style="width: 100%; margin-top: 0.75rem;">
+        <i class="fa-solid fa-user-check"></i> Register Account
+      </button>
+    </form>
+
+    <div class="auth-switch-box">
+      <span>Already have an account?</span>
+      <a href="{{ url_for('login_page') }}" class="auth-switch-link">Sign In</a>
+    </div>
+
+    <div style="text-align: center; margin-top: 1.25rem;">
+      <a href="{{ url_for('index_page') }}" style="font-size: 0.85rem; color: var(--text-muted);">
+        <i class="fa-solid fa-arrow-left"></i> Back to Home
+      </a>
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  // Password Show/Hide Toggle for Password field
+  const toggleRegBtn = document.getElementById('toggleRegPassword');
+  const regPasswordInput = document.getElementById('regPassword');
+  const regEyeIcon = document.getElementById('regEyeIcon');
+
+  if (toggleRegBtn && regPasswordInput && regEyeIcon) {
+    toggleRegBtn.addEventListener('click', () => {
+      const isPassword = regPasswordInput.type === 'password';
+      regPasswordInput.type = isPassword ? 'text' : 'password';
+      regEyeIcon.className = isPassword ? 'fa-solid fa-eye-slash' : 'fa-solid fa-eye';
+    });
+  }
+
+  // Password Show/Hide Toggle for Confirm Password field
+  const toggleRegConfirmBtn = document.getElementById('toggleRegConfirmPassword');
+  const regConfirmPasswordInput = document.getElementById('regConfirmPassword');
+  const regConfirmEyeIcon = document.getElementById('regConfirmEyeIcon');
+
+  if (toggleRegConfirmBtn && regConfirmPasswordInput && regConfirmEyeIcon) {
+    toggleRegConfirmBtn.addEventListener('click', () => {
+      const isPassword = regConfirmPasswordInput.type === 'password';
+      regConfirmPasswordInput.type = isPassword ? 'text' : 'password';
+      regConfirmEyeIcon.className = isPassword ? 'fa-solid fa-eye-slash' : 'fa-solid fa-eye';
+    });
+  }
+
+  // Registration Form Submit Handler
+  const form = document.getElementById('registerForm');
+  if (form) {
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const name = document.getElementById('regName').value.trim();
+      const email = document.getElementById('regEmail').value.trim();
+      const phone = document.getElementById('regPhone').value.trim().replace(/[^0-9]/g, '');
+      const password = document.getElementById('regPassword').value;
+      const confirm_password = document.getElementById('regConfirmPassword').value;
+
+      if (!name || !email || !phone || !password) {
+        showToast('Validation Error', 'Please fill all required fields.', 'warning');
+        return;
+      }
+
+      if (phone.length < 10) {
+        showToast('Validation Error', 'Please enter a valid 10-digit mobile number.', 'warning');
+        return;
+      }
+
+      if (password.length < 6) {
+        showToast('Validation Error', 'Password must be at least 6 characters.', 'warning');
+        return;
+      }
+
+      if (password !== confirm_password) {
+        showToast('Validation Error', 'Passwords do not match.', 'warning');
+        return;
+      }
+
+      const submitBtn = document.getElementById('regSubmitBtn');
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = `<div class="spinner" style="width:18px;height:18px;border-width:2px;display:inline-block;"></div> Registering...`;
+
+      try {
+        const res = await fetch('/api/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, email, phone, password, confirm_password })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast('Account Created!', data.message || 'Registration successful.', 'success');
+          setTimeout(() => {
+            window.location.href = '/dashboard';
+          }, 600);
+        } else {
+          showToast('Registration Error', data.message || 'Registration failed.', 'danger');
+        }
+      } catch (err) {
+        console.error('Registration error:', err);
+        showToast('Error', 'Server connection error.', 'danger');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = `<i class="fa-solid fa-user-check"></i> Register Account`;
+      }
+    });
+  }
+});
+</script>
+{% endblock %}

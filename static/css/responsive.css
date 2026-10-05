@@ -1,0 +1,107 @@
+/* Responsive Layout Media Queries */
+
+@media (max-width: 1024px) {
+  .charts-grid {
+    grid-template-columns: 1fr;
+  }
+  .split-bill-grid {
+    grid-template-columns: 1fr;
+  }
+  .health-hero-content {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 768px) {
+  .sidebar {
+    transform: translateX(-100%);
+  }
+
+  .sidebar.mobile-open {
+    transform: translateX(0);
+    box-shadow: 10px 0 30px rgba(0, 0, 0, 0.5);
+  }
+
+  .main-wrapper {
+    margin-left: 0;
+  }
+
+  .mobile-toggle {
+    display: block;
+  }
+
+  .top-navbar {
+    padding: 0 1rem;
+  }
+
+  .page-container {
+    padding: 1.25rem 1rem;
+  }
+
+  .dashboard-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .header-actions {
+    width: 100%;
+  }
+
+  .header-actions .btn {
+    flex: 1;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .form-row {
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .filter-inputs-collapsible {
+    grid-template-columns: 1fr;
+  }
+
+  .goals-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .nav-right {
+    gap: 0.6rem;
+  }
+
+  .user-name-text {
+    display: none;
+  }
+
+  .toast-container {
+    left: 1rem;
+    right: 1rem;
+    bottom: 1rem;
+  }
+
+  .toast {
+    min-width: unset;
+    width: 100%;
+  }
+}
+
+/* Sidebar Backdrop for Mobile */
+.sidebar-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(3px);
+  z-index: 95;
+  display: none;
+}
+
+.sidebar-backdrop.active {
+  display: block;
+}

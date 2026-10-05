@@ -1,0 +1,97 @@
+{% extends "layout.html" %}
+
+{% block title %}Add Transaction - Smart Expense Tracker{% endblock %}
+{% block page_title %}Add New Transaction{% endblock %}
+
+{% block content %}
+<div style="max-width: 680px; margin: 0 auto;">
+  
+  <div class="card">
+    <div style="margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 1rem;">
+      <h2 style="font-size: 1.4rem; font-weight: 700;">Record Transaction</h2>
+      <p class="text-muted" style="font-size: 0.9rem;">Fill in the details below to add a new income or expense entry.</p>
+    </div>
+
+    <form id="addExpenseForm">
+      
+      <!-- Type Toggle Pill (Expense vs Income) -->
+      <div class="form-group">
+        <label class="form-label">Transaction Type <span class="required">*</span></label>
+        <div class="type-toggle-group">
+          <label class="type-toggle-btn active-expense" id="pillExpense">
+            <input type="radio" name="type" value="Expense" checked>
+            <i class="fa-solid fa-arrow-trend-down"></i> Expense
+          </label>
+          <label class="type-toggle-btn" id="pillIncome">
+            <input type="radio" name="type" value="Income">
+            <i class="fa-solid fa-arrow-trend-up"></i> Income
+          </label>
+        </div>
+      </div>
+
+      <!-- Date & Amount Row -->
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" for="expenseDate">Date <span class="required">*</span></label>
+          <input type="date" id="expenseDate" class="form-control" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="expenseAmount">Amount (₹ INR) <span class="required">*</span></label>
+          <input type="number" id="expenseAmount" class="form-control" placeholder="0.00" step="0.01" min="0.01" required>
+        </div>
+      </div>
+
+      <!-- Description -->
+      <div class="form-group">
+        <label class="form-label" for="expenseDescription">Description <span class="required">*</span></label>
+        <input type="text" id="expenseDescription" class="form-control" placeholder="e.g. College Lunch, Bus Pass, Freelance Project" required>
+      </div>
+
+      <!-- Category & Payment Method Row -->
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" for="expenseCategory">Category <span class="required">*</span></label>
+          <select id="expenseCategory" class="form-control" required>
+            <option value="">Select Category</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="expensePaymentMethod">Payment Method <span class="required">*</span></label>
+          <select id="expensePaymentMethod" class="form-control" required>
+            <option value="">Select Payment Method</option>
+            <option value="UPI">UPI (Google Pay, PhonePe, Paytm)</option>
+            <option value="Cash">Cash</option>
+            <option value="Debit Card">Debit Card</option>
+            <option value="Credit Card">Credit Card</option>
+            <option value="Bank Transfer">Bank Transfer</option>
+            <option value="Net Banking">Net Banking</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Notes -->
+      <div class="form-group">
+        <label class="form-label" for="expenseNotes">Additional Notes (Optional)</label>
+        <textarea id="expenseNotes" class="form-control" placeholder="Add any additional details or tags..."></textarea>
+      </div>
+
+      <!-- Actions -->
+      <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 1.5rem;">
+        <a href="{{ url_for('dashboard_page') }}" class="btn btn-secondary">Cancel</a>
+        <button type="submit" class="btn btn-primary">
+          <i class="fa-solid fa-plus-circle"></i> Save Transaction
+        </button>
+      </div>
+
+    </form>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/expenses.js') }}"></script>
+{% endblock %}

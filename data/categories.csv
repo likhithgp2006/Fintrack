@@ -1,0 +1,15 @@
+id,name,type,icon,color
+1,Food,Expense,fa-utensils,#ef4444
+2,Transport,Expense,fa-bus,#f59e0b
+3,Housing,Expense,fa-house,#10b981
+4,Education,Expense,fa-graduation-cap,#6366f1
+5,Shopping,Expense,fa-bag-shopping,#ec4899
+6,Health,Expense,fa-heart-pulse,#8b5cf6
+7,Entertainment,Expense,fa-film,#3b82f6
+8,Bills,Expense,fa-file-invoice-dollar,#06b6d4
+9,Travel,Expense,fa-plane,#14b8a6
+10,Recharge,Expense,fa-mobile-screen-button,#84cc16
+11,Salary,Income,fa-wallet,#10b981
+12,Freelance,Income,fa-laptop-code,#6366f1
+13,Investment,Income,fa-chart-line,#3b82f6
+14,Other,Expense,fa-asterisk,#64748b

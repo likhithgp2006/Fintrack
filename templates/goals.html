@@ -1,0 +1,256 @@
+{% extends "layout.html" %}
+
+{% block title %}Savings Goals - Smart Expense Tracker{% endblock %}
+{% block page_title %}Savings Goals & Milestones{% endblock %}
+
+{% block content %}
+<!-- Goals Header & Quick Action -->
+<div class="dashboard-header">
+  <div class="welcome-section">
+    <h1>Your Financial Goals 🎯</h1>
+    <p>Track your target milestones, deposit savings, and watch your future grow.</p>
+  </div>
+  
+  <div class="header-actions">
+    <button class="btn btn-primary" id="openNewGoalModalBtn">
+      <i class="fa-solid fa-plus"></i> New Savings Goal
+    </button>
+  </div>
+</div>
+
+<!-- Savings Goals Summary Stats -->
+<div class="stats-grid">
+  <div class="card stat-card stat-income card-hover">
+    <div class="stat-info">
+      <span class="stat-label">Total Saved</span>
+      <span class="stat-value" id="summaryTotalSaved">₹0.00</span>
+      <span class="stat-subtext">Across all active goals</span>
+    </div>
+    <div class="stat-icon-wrapper">
+      <i class="fa-solid fa-piggy-bank"></i>
+    </div>
+  </div>
+
+  <div class="card stat-card stat-balance card-hover">
+    <div class="stat-info">
+      <span class="stat-label">Total Target</span>
+      <span class="stat-value" id="summaryTotalTarget">₹0.00</span>
+      <span class="stat-subtext">Combined target value</span>
+    </div>
+    <div class="stat-icon-wrapper">
+      <i class="fa-solid fa-bullseye"></i>
+    </div>
+  </div>
+
+  <div class="card stat-card stat-highest card-hover">
+    <div class="stat-info">
+      <span class="stat-label">Overall Progress</span>
+      <span class="stat-value" id="summaryOverallPct">0%</span>
+      <span class="stat-subtext">Portfolio completion</span>
+    </div>
+    <div class="stat-icon-wrapper">
+      <i class="fa-solid fa-chart-line"></i>
+    </div>
+  </div>
+
+  <div class="card stat-card stat-count card-hover">
+    <div class="stat-info">
+      <span class="stat-label">Milestones Reached</span>
+      <span class="stat-value" id="summaryCompletedCount">0</span>
+      <span class="stat-subtext">Fully achieved goals</span>
+    </div>
+    <div class="stat-icon-wrapper">
+      <i class="fa-solid fa-trophy"></i>
+    </div>
+  </div>
+</div>
+
+<!-- Goal Cards Grid -->
+<div class="goals-grid" id="goalsGridContainer">
+  <div class="empty-state" style="grid-column: 1 / -1;">
+    <div class="spinner" style="margin: 0 auto 1rem;"></div>
+    <div class="empty-state-title">Loading your savings goals...</div>
+  </div>
+</div>
+
+<!-- Create New Goal Modal -->
+<div class="modal-overlay" id="newGoalModal">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h3 class="modal-title"><i class="fa-solid fa-bullseye" style="color: var(--primary);"></i> Create New Savings Goal</h3>
+      <button type="button" class="modal-close-btn close-modal-btn"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    
+    <form id="newGoalForm">
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label" for="goalTitle">Goal Title *</label>
+          <input type="text" id="goalTitle" class="form-control" placeholder="e.g. Emergency Fund, MacBook M3, Europe Trip" required>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="goalTargetAmount">Target Amount *</label>
+            <input type="number" step="0.01" min="1" id="goalTargetAmount" class="form-control" placeholder="e.g. 50000" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="goalCurrentAmount">Already Saved</label>
+            <input type="number" step="0.01" min="0" id="goalCurrentAmount" class="form-control" placeholder="0.00" value="0">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="goalTargetDate">Target Deadline *</label>
+            <input type="date" id="goalTargetDate" class="form-control" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="goalCategory">Category</label>
+            <select id="goalCategory" class="form-control">
+              <option value="Savings">💰 General Savings</option>
+              <option value="Emergency">🛡️ Emergency Reserve</option>
+              <option value="Gadgets">💻 Tech & Gadgets</option>
+              <option value="Travel">✈️ Travel & Vacation</option>
+              <option value="Vehicle">🚗 Vehicle / Auto</option>
+              <option value="Education">🎓 Education / Courses</option>
+              <option value="Home">🏠 Home & Living</option>
+              <option value="Other">✨ Other</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="goalNotes">Notes & Motivation</label>
+          <textarea id="goalNotes" class="form-control" rows="2" placeholder="Why is this milestone important to you?"></textarea>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary close-modal-btn">Cancel</button>
+        <button type="submit" class="btn btn-primary" id="saveGoalBtn">Create Goal</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Contribute Funds Modal -->
+<div class="modal-overlay" id="contributeModal">
+  <div class="modal-card" style="max-width: 480px;">
+    <div class="modal-header">
+      <h3 class="modal-title"><i class="fa-solid fa-piggy-bank" style="color: var(--success);"></i> Add Funds to Goal</h3>
+      <button type="button" class="modal-close-btn close-modal-btn"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+
+    <form id="contributeForm">
+      <input type="hidden" id="contributeGoalId">
+      <div class="modal-body">
+        <div style="margin-bottom: 1rem;">
+          <h4 id="contributeGoalTitle" style="font-size: 1.15rem; font-weight: 700; color: var(--primary);">Goal Name</h4>
+          <p class="text-muted" id="contributeGoalSubtext" style="font-size: 0.88rem;">Current: ₹0.00 / Target: ₹0.00</p>
+        </div>
+
+        <!-- Quick Amount Pills -->
+        <div class="quick-amount-pills" style="display: flex; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap;">
+          <button type="button" class="pill-btn quick-amt-btn" data-amt="500">+₹500</button>
+          <button type="button" class="pill-btn quick-amt-btn" data-amt="1000">+₹1,000</button>
+          <button type="button" class="pill-btn quick-amt-btn" data-amt="5000">+₹5,000</button>
+          <button type="button" class="pill-btn quick-amt-btn" data-amt="10000">+₹10,000</button>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="contributeAmount">Deposit Amount *</label>
+          <input type="number" step="0.01" min="1" id="contributeAmount" class="form-control" placeholder="Enter amount" required autofocus>
+        </div>
+
+        <div class="form-group" style="margin-top: 1rem;">
+          <label class="form-label" for="contributePaymentMethod">Payment Mode</label>
+          <select id="contributePaymentMethod" class="form-control">
+            <option value="UPI">UPI (GPay / PhonePe / Paytm)</option>
+            <option value="Bank Transfer">Bank Transfer (NEFT/IMPS)</option>
+            <option value="Cash">Cash</option>
+            <option value="Debit Card">Debit Card</option>
+            <option value="Credit Card">Credit Card</option>
+          </select>
+        </div>
+
+        <div class="form-group" style="margin-top: 1rem; display: flex; align-items: center; gap: 0.6rem;">
+          <input type="checkbox" id="contributeRecordExpense" checked style="width: 18px; height: 18px; accent-color: var(--primary); cursor: pointer;">
+          <label for="contributeRecordExpense" style="font-size: 0.9rem; cursor: pointer; user-select: none;">
+            Also record this deposit as an <strong>Expense (Investment)</strong> in transaction ledger
+          </label>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary close-modal-btn">Cancel</button>
+        <button type="submit" class="btn btn-primary" id="submitContributeBtn">Deposit Funds</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Edit Goal Modal -->
+<div class="modal-overlay" id="editGoalModal">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h3 class="modal-title">Edit Savings Goal</h3>
+      <button type="button" class="modal-close-btn close-modal-btn"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+
+    <form id="editGoalForm">
+      <input type="hidden" id="editGoalId">
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label" for="editGoalTitle">Goal Title *</label>
+          <input type="text" id="editGoalTitle" class="form-control" required>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="editGoalTargetAmount">Target Amount *</label>
+            <input type="number" step="0.01" min="1" id="editGoalTargetAmount" class="form-control" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="editGoalCurrentAmount">Current Saved Amount *</label>
+            <input type="number" step="0.01" min="0" id="editGoalCurrentAmount" class="form-control" required>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="editGoalTargetDate">Target Deadline *</label>
+            <input type="date" id="editGoalTargetDate" class="form-control" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="editGoalCategory">Category</label>
+            <select id="editGoalCategory" class="form-control">
+              <option value="Savings">💰 General Savings</option>
+              <option value="Emergency">🛡️ Emergency Reserve</option>
+              <option value="Gadgets">💻 Tech & Gadgets</option>
+              <option value="Travel">✈️ Travel & Vacation</option>
+              <option value="Vehicle">🚗 Vehicle / Auto</option>
+              <option value="Education">🎓 Education / Courses</option>
+              <option value="Home">🏠 Home & Living</option>
+              <option value="Other">✨ Other</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="editGoalNotes">Notes</label>
+          <textarea id="editGoalNotes" class="form-control" rows="2"></textarea>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary close-modal-btn">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save Changes</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/goals.js') }}"></script>
+{% endblock %}

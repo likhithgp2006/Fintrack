@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Smart Expense Tracker - Personal Finance Management{% endblock %}</title>
+  <meta name="description" content="Track daily expenses, manage category budgets, analyze monthly spending, and take control of your financial goals with Smart Expense Tracker.">
+  
+  <!-- Font Awesome 6 Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  
+  <!-- App Stylesheets -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/forms.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/tables.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/reports.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/responsive.css') }}">
+</head>
+<body>
+
+  {% if session.get('user_id') %}
+  <!-- Authenticated Application Shell -->
+  <div class="app-layout">
+    
+    <!-- Mobile Sidebar Backdrop -->
+    <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="logo-icon">
+          <i class="fa-solid fa-wallet"></i>
+        </div>
+        <div class="logo-text">ExpenseTracker</div>
+      </div>
+
+      <ul class="sidebar-menu">
+        <li class="sidebar-item">
+          <a href="{{ url_for('dashboard_page') }}" class="sidebar-link {% if request.endpoint == 'dashboard_page' %}active{% endif %}">
+            <i class="fa-solid fa-chart-pie"></i>
+            <span>Dashboard</span>
+          </a>
+        </li>
+        <li class="sidebar-item">
+          <a href="{{ url_for('add_expense_page') }}" class="sidebar-link {% if request.endpoint == 'add_expense_page' %}active{% endif %}">
+            <i class="fa-solid fa-circle-plus"></i>
+            <span>Add Transaction</span>
+          </a>
+        </li>
+        <li class="sidebar-item">
+          <a href="{{ url_for('transactions_page') }}" class="sidebar-link {% if request.endpoint == 'transactions_page' %}active{% endif %}">
+            <i class="fa-solid fa-list-check"></i>
+            <span>Transactions</span>
+          </a>
+        </li>
+        <li class="sidebar-item">
+          <a href="{{ url_for('budgets_page') }}" class="sidebar-link {% if request.endpoint == 'budgets_page' %}active{% endif %}">
+            <i class="fa-solid fa-calculator"></i>
+            <span>Budgets</span>
+          </a>
+        </li>
+        <li class="sidebar-item">
+          <a href="{{ url_for('goals_page') }}" class="sidebar-link {% if request.endpoint == 'goals_page' %}active{% endif %}">
+            <i class="fa-solid fa-bullseye"></i>
+            <span>Savings Goals</span>
+          </a>
+        </li>
+        <li class="sidebar-item">
+          <a href="{{ url_for('subscriptions_page') }}" class="sidebar-link {% if request.endpoint == 'subscriptions_page' %}active{% endif %}">
+            <i class="fa-solid fa-arrows-rotate"></i>
+            <span>Subscriptions</span>
+          </a>
+        </li>
+        <li class="sidebar-item">
+          <a href="{{ url_for('split_bill_page') }}" class="sidebar-link {% if request.endpoint == 'split_bill_page' %}active{% endif %}" style="position: relative;">
+            <i class="fa-solid fa-people-arrows"></i>
+            <span>Split Bill</span>
+            <span id="navSplitBadge" style="display:none; margin-left:auto; background:var(--primary); color:#fff; font-size:0.7rem; font-weight:700; padding:0.1rem 0.45rem; border-radius:999px;"></span>
+          </a>
+        </li>
+        <li class="sidebar-item">
+          <a href="{{ url_for('friends_page') }}" class="sidebar-link {% if request.endpoint == 'friends_page' %}active{% endif %}">
+            <i class="fa-solid fa-user-group"></i>
+            <span>Friends</span>
+          </a>
+        </li>
+
+        <li class="sidebar-item">
+          <a href="{{ url_for('reports_page') }}" class="sidebar-link {% if request.endpoint == 'reports_page' %}active{% endif %}">
+            <i class="fa-solid fa-chart-column"></i>
+            <span>Reports & Analytics</span>
+          </a>
+        </li>
+        <li class="sidebar-item">
+          <a href="{{ url_for('profile_page') }}" class="sidebar-link {% if request.endpoint == 'profile_page' %}active{% endif %}">
+            <i class="fa-solid fa-user-gear"></i>
+            <span>Profile</span>
+          </a>
+        </li>
+      </ul>
+
+      <div class="sidebar-footer">
+        <div class="sidebar-user-card">
+          <a href="{{ url_for('profile_page') }}" class="sidebar-user-info" title="Manage Profile">
+            <div class="sidebar-avatar">
+              {{ session.get('user_name', 'U')[0].upper() }}
+            </div>
+            <div class="sidebar-user-details">
+              <span class="sidebar-user-name">{{ session.get('user_name', 'User') }}</span>
+              <span class="sidebar-user-role"><i class="fa-solid fa-circle status-dot"></i>Active</span>
+            </div>
+          </a>
+          <button type="button" class="sidebar-logout-btn logout-trigger" title="Log Out" aria-label="Log Out">
+            <i class="fa-solid fa-right-from-bracket"></i>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Wrapper -->
+    <div class="main-wrapper">
+      
+      <!-- Top Navigation Bar -->
+      <header class="top-navbar">
+        <div class="nav-left">
+          <button class="mobile-toggle" id="mobileMenuToggle">
+            <i class="fa-solid fa-bars"></i>
+          </button>
+          <h2 class="page-title-text">{% block page_title %}Dashboard{% endblock %}</h2>
+        </div>
+
+        <div class="nav-right">
+          <!-- Multi-Currency Selector Dropdown -->
+          <div class="currency-dropdown-wrap" title="Change Preferred Currency">
+            <i class="fa-solid fa-coins currency-icon"></i>
+            <select class="global-currency-select" id="navbarCurrencySelect">
+              <option value="INR">₹ INR</option>
+              <option value="USD">$ USD</option>
+              <option value="EUR">€ EUR</option>
+              <option value="GBP">£ GBP</option>
+              <option value="AED">د.إ AED</option>
+              <option value="CAD">C$ CAD</option>
+              <option value="AUD">A$ AUD</option>
+              <option value="JPY">¥ JPY</option>
+            </select>
+          </div>
+
+          <!-- Quick CSV Import Button -->
+          <button class="theme-toggle-btn" id="openCsvImportModalBtn" title="Bulk Import CSV Transactions">
+            <i class="fa-solid fa-file-import"></i>
+          </button>
+
+          <!-- Theme Switcher Button -->
+          <button class="theme-toggle-btn" id="themeToggleBtn" title="Toggle Light/Dark Mode">
+            <i class="fa-solid fa-moon"></i>
+          </button>
+
+          <!-- User Profile Badge -->
+          <a href="{{ url_for('profile_page') }}" class="user-profile-badge" style="text-decoration: none; color: inherit;">
+            <div class="user-avatar">
+              {{ session.get('user_name', 'U')[0].upper() }}
+            </div>
+            <span class="user-name-text">{{ session.get('user_name', 'User') }}</span>
+          </a>
+        </div>
+      </header>
+
+      <!-- Page Container Content -->
+      <main class="page-container">
+        {% block content %}{% endblock %}
+      </main>
+
+      <!-- Footer -->
+      <footer class="app-footer">
+        Smart Expense Tracker &copy; 2026 | Full-Stack Personal Finance System
+      </footer>
+
+    </div>
+
+  </div>
+
+  <!-- Global CSV Import Modal -->
+  <div class="modal-overlay" id="csvImportModal">
+    <div class="modal-card" style="max-width: 520px;">
+      <div class="modal-header">
+        <h3 class="modal-title"><i class="fa-solid fa-file-import" style="color: var(--primary);"></i> Bulk Import Transactions</h3>
+        <button type="button" class="modal-close-btn" id="closeCsvImportBtn"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form id="csvImportForm" enctype="multipart/form-data">
+        <div class="modal-body">
+          <p class="text-muted" style="font-size: 0.9rem; margin-bottom: 1.25rem;">
+            Upload your transactions CSV file to quickly add records in bulk. You can download our ready template below.
+          </p>
+
+          <div class="csv-dropzone" id="csvDropzone">
+            <i class="fa-solid fa-cloud-arrow-up dropzone-icon"></i>
+            <div class="dropzone-text"><strong>Click to select</strong> or drag and drop CSV file</div>
+            <div class="dropzone-subtext text-muted">Supports .csv files with Date, Description, Category, Amount, Payment Method</div>
+            <input type="file" id="csvFileInput" name="file" accept=".csv" style="display: none;" required>
+            <div id="selectedFileName" class="selected-file-label" style="display: none;"></div>
+          </div>
+
+          <div style="margin-top: 1.25rem; display: flex; justify-content: space-between; align-items: center; font-size: 0.88rem;">
+            <span class="text-muted">Need an example structure?</span>
+            <a href="/api/export/template" class="btn btn-secondary btn-sm" download>
+              <i class="fa-solid fa-download"></i> Sample Template
+            </a>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" id="cancelCsvImportBtn">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="submitCsvImportBtn">
+            <i class="fa-solid fa-upload"></i> Import Transactions
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  {% else %}
+  <!-- Public Layout (Landing / Auth) -->
+  <div class="public-layout">
+    {% block public_content %}{% endblock %}
+  </div>
+  {% endif %}
+
+  <!-- Toast Notification Container -->
+  <div class="toast-container"></div>
+
+  <!-- JavaScript Scripts -->
+  <script src="{{ url_for('static', filename='js/auth.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+  <script>
+    // Global pending split notification checker for logged-in sessions
+    {% if session.get('user_id') %}
+    document.addEventListener('DOMContentLoaded', () => {
+      fetch('/api/split-notifications')
+        .then(res => res.json())
+        .then(data => {
+          if (data && data.success && data.count > 0) {
+            const badge = document.getElementById('navSplitBadge');
+            if (badge) {
+              badge.textContent = data.count;
+              badge.style.display = 'inline-block';
+            }
+          }
+        })
+        .catch(() => {});
+    });
+    {% endif %}
+  </script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

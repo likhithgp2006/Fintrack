@@ -1,0 +1,220 @@
+{% extends "layout.html" %}
+
+{% block title %}Dashboard - Smart Expense Tracker{% endblock %}
+{% block page_title %}Dashboard Overview{% endblock %}
+
+{% block content %}
+<!-- Welcome & Quick Action Header -->
+<div class="dashboard-header">
+  <div class="welcome-section">
+    <h1>Welcome back, <span style="color: var(--primary);">{{ user_name }}</span>! 👋</h1>
+    <p>Here is your financial summary and spending insights for this month.</p>
+  </div>
+
+  <div class="header-actions">
+    <a href="{{ url_for('add_expense_page') }}" class="btn btn-primary">
+      <i class="fa-solid fa-plus"></i> Add Transaction
+    </a>
+    <a href="/api/export/csv" class="btn btn-secondary" title="Export all transactions to CSV">
+      <i class="fa-solid fa-file-arrow-down"></i> Export CSV
+    </a>
+  </div>
+</div>
+
+<!-- Financial Health & Smart Insights Hero Widget -->
+<div class="card financial-health-card" id="financialHealthCard" style="margin-bottom: 1.5rem;">
+  <div class="financial-health-inner">
+
+    <!-- Score Circle / Badge -->
+    <div class="health-score-dial-wrap">
+      <div class="health-score-circle" id="healthScoreCircle">
+        <span class="health-score-num" id="healthScoreNum">--</span>
+        <span class="health-score-max">/ 100</span>
+      </div>
+      <div class="health-grade-badge" id="healthGradeBadge">
+        <i class="fa-solid fa-spinner fa-spin"></i> Analyzing
+      </div>
+    </div>
+
+    <!-- Health Breakdown & 50/30/20 Rule Analysis -->
+    <div class="health-rule-section">
+      <div class="health-rule-header">
+        <h4 style="font-size: 1.05rem; font-weight: 700;">
+          <i class="fa-solid fa-heart-pulse" style="color: #ec4899;"></i> Financial Wellness & 50/30/20 Breakdown
+        </h4>
+        <span class="badge badge-income" id="healthSavingsRateBadge">Savings Rate: --%</span>
+      </div>
+
+      <!-- 50/30/20 Progress Bar -->
+      <div class="stacked-rule-bar" id="ruleStackedBar">
+        <div class="stacked-segment segment-needs" id="barNeeds" style="width: 50%;" title="Needs (Essential)"></div>
+        <div class="stacked-segment segment-wants" id="barWants" style="width: 30%;" title="Wants (Lifestyle)"></div>
+        <div class="stacked-segment segment-savings" id="barSavings" style="width: 20%;" title="Savings & Investments">
+        </div>
+      </div>
+
+      <div class="rule-legend">
+        <div class="legend-item"><span class="dot dot-needs"></span> Needs: <strong id="valNeeds">--%</strong> <small
+            class="text-muted">(Goal 50%)</small></div>
+        <div class="legend-item"><span class="dot dot-wants"></span> Wants: <strong id="valWants">--%</strong> <small
+            class="text-muted">(Goal 30%)</small></div>
+        <div class="legend-item"><span class="dot dot-savings"></span> Savings: <strong id="valSavings">--%</strong>
+          <small class="text-muted">(Goal 20%)</small>
+        </div>
+      </div>
+    </div>
+
+    <!-- Smart Spending Insights Box -->
+    <div class="smart-insights-box">
+      <div class="insights-title">
+        <i class="fa-solid fa-wand-magic-sparkles" style="color: var(--primary);"></i> AI Spending Advisor
+      </div>
+      <div class="insights-list" id="smartInsightsList">
+        <div class="insight-item-placeholder text-muted" style="font-size: 0.85rem;">
+          <i class="fa-solid fa-spinner fa-spin"></i> Formulating smart financial advice...
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Stat Cards Grid -->
+<div class="stats-grid">
+
+  <div class="card stat-card stat-income card-hover">
+    <div class="stat-info">
+      <span class="stat-label">Total Income</span>
+      <span class="stat-value" id="statTotalIncome">₹0.00</span>
+      <span class="stat-subtext">All time recorded income</span>
+    </div>
+    <div class="stat-icon-wrapper">
+      <i class="fa-solid fa-arrow-trend-up"></i>
+    </div>
+  </div>
+
+  <div class="card stat-card stat-expense card-hover">
+    <div class="stat-info">
+      <span class="stat-label">Total Expenses</span>
+      <span class="stat-value" id="statTotalExpenses">₹0.00</span>
+      <span class="stat-subtext">All time total spending</span>
+    </div>
+    <div class="stat-icon-wrapper">
+      <i class="fa-solid fa-arrow-trend-down"></i>
+    </div>
+  </div>
+
+  <div class="card stat-card stat-balance card-hover">
+    <div class="stat-info">
+      <span class="stat-label">Net Balance</span>
+      <span class="stat-value" id="statBalance">₹0.00</span>
+      <span class="stat-subtext">Income minus Expenses</span>
+    </div>
+    <div class="stat-icon-wrapper">
+      <i class="fa-solid fa-wallet"></i>
+    </div>
+  </div>
+
+  <div class="card stat-card stat-count card-hover">
+    <div class="stat-info">
+      <span class="stat-label">Transactions</span>
+      <span class="stat-value" id="statTransactionCount">0</span>
+      <span class="stat-subtext">Total recorded records</span>
+    </div>
+    <div class="stat-icon-wrapper">
+      <i class="fa-solid fa-receipt"></i>
+    </div>
+  </div>
+
+  <div class="card stat-card stat-highest card-hover">
+    <div class="stat-info">
+      <span class="stat-label">Highest Expense</span>
+      <span class="stat-value" id="statHighestExpense">₹0.00</span>
+      <span class="stat-subtext">Single largest transaction</span>
+    </div>
+    <div class="stat-icon-wrapper">
+      <i class="fa-solid fa-crown"></i>
+    </div>
+  </div>
+
+  <div class="card stat-card stat-month card-hover">
+    <div class="stat-info">
+      <span class="stat-label">This Month</span>
+      <span class="stat-value" id="statCurrentMonthSpending">₹0.00</span>
+      <span class="stat-subtext">Current month spending</span>
+    </div>
+    <div class="stat-icon-wrapper">
+      <i class="fa-solid fa-calendar-days"></i>
+    </div>
+  </div>
+
+</div>
+
+<!-- Charts Section -->
+<div class="charts-grid">
+
+  <!-- Monthly Expense Bar Chart -->
+  <div class="card chart-card">
+    <div class="chart-header">
+      <div class="chart-title">
+        <i class="fa-solid fa-chart-column" style="color: var(--primary);"></i> Monthly Income vs Expenses
+      </div>
+    </div>
+    <div class="chart-body">
+      <canvas id="monthlyChartCanvas"></canvas>
+    </div>
+  </div>
+
+  <!-- Category Breakdown Doughnut Chart -->
+  <div class="card chart-card">
+    <div class="chart-header">
+      <div class="chart-title">
+        <i class="fa-solid fa-chart-pie" style="color: var(--secondary);"></i> Category Distribution
+      </div>
+    </div>
+    <div class="chart-body">
+      <canvas id="categoryChartCanvas"></canvas>
+    </div>
+  </div>
+
+</div>
+
+<!-- Recent Transactions Table Section -->
+<div class="card">
+  <div class="section-header">
+    <div class="section-title">
+      <i class="fa-solid fa-clock-rotate-left" style="color: var(--primary);"></i> Recent Transactions
+    </div>
+    <a href="{{ url_for('transactions_page') }}" class="btn btn-secondary btn-sm">
+      View All <i class="fa-solid fa-arrow-right"></i>
+    </a>
+  </div>
+
+  <div class="table-responsive">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Description</th>
+          <th>Category</th>
+          <th>Type</th>
+          <th>Payment Method</th>
+          <th>Amount</th>
+        </tr>
+      </thead>
+      <tbody id="recentTransactionsBody">
+        <tr>
+          <td colspan="6" class="empty-state">
+            <div class="spinner" style="margin: 0 auto 1rem;"></div>
+            <div class="empty-state-title">Loading recent transactions...</div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+{% endblock %}

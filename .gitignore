@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+*.pdb
+
+# Virtual Environment
+venv/
+env/
+.venv/
+ENV/
+
+# Environment / Secrets - NEVER commit this
+.env
+
+# Data files with user data - keep only empty (header-only) versions
+# The app recreates them on first run via init_db()
+data/users.csv
+data/expenses.csv
+data/budgets.csv
+data/goals.csv
+data/subscriptions.csv
+data/friends.csv
+data/shared_expenses.csv
+data/split_rooms.csv
+data/split_room_members.csv
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+*.log

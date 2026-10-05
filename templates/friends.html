@@ -1,0 +1,339 @@
+{% extends "layout.html" %}
+{% block title %}Friends & Contacts - Smart Expense Tracker{% endblock %}
+{% block page_title %}Friends & Contacts{% endblock %}
+
+{% block content %}
+<div class="dashboard-header">
+  <div class="welcome-section">
+    <h1>Friends & Contacts 👥</h1>
+    <p>Add friends by their registered email, accept requests, and track shared expenses together.</p>
+  </div>
+  <div class="header-actions">
+    <button class="btn btn-primary" id="addFriendBtn">
+      <i class="fa-solid fa-user-plus"></i> Add Friend
+    </button>
+  </div>
+</div>
+
+<!-- Stats Row -->
+<div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); margin-bottom: 1.5rem;">
+  <div class="stat-card">
+    <div class="stat-icon" style="background: linear-gradient(135deg,#6366f1,#8b5cf6);">
+      <i class="fa-solid fa-user-group"></i>
+    </div>
+    <div class="stat-content">
+      <div class="stat-value" id="statFriendsCount">0</div>
+      <div class="stat-label">Friends</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon" style="background: linear-gradient(135deg,#f59e0b,#ef4444);">
+      <i class="fa-solid fa-bell"></i>
+    </div>
+    <div class="stat-content">
+      <div class="stat-value" id="statRequestsCount">0</div>
+      <div class="stat-label">Pending Requests</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon" style="background: linear-gradient(135deg,#10b981,#06b6d4);">
+      <i class="fa-solid fa-hand-holding-dollar"></i>
+    </div>
+    <div class="stat-content">
+      <div class="stat-value" id="statOwedToMe">₹0</div>
+      <div class="stat-label">Others Owe Me</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon" style="background: linear-gradient(135deg,#ec4899,#f43f5e);">
+      <i class="fa-solid fa-money-bill-transfer"></i>
+    </div>
+    <div class="stat-content">
+      <div class="stat-value" id="statIOwe">₹0</div>
+      <div class="stat-label">I Owe Others</div>
+    </div>
+  </div>
+</div>
+
+<!-- Two Column Layout -->
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; align-items: start;">
+
+  <!-- Left: Friends List + Requests -->
+  <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+
+    <!-- Incoming Requests -->
+    <div class="card" id="requestsCard" style="display: none;">
+      <h3 style="font-size: 1rem; font-weight: 700; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+        <i class="fa-solid fa-bell" style="color: var(--warning);"></i> Incoming Friend Requests
+        <span id="requestsBadge" class="badge" style="background: var(--danger); color: white; border-radius: 999px; padding: 0.15rem 0.55rem; font-size: 0.75rem;"></span>
+      </h3>
+      <div id="requestsList" style="display: flex; flex-direction: column; gap: 0.75rem;"></div>
+    </div>
+
+    <!-- Friends List -->
+    <div class="card">
+      <h3 style="font-size: 1rem; font-weight: 700; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+        <i class="fa-solid fa-address-book" style="color: var(--primary);"></i> My Contacts
+      </h3>
+      <div id="friendsListContainer">
+        <div class="empty-state" id="friendsEmptyState">
+          <i class="fa-solid fa-user-group" style="font-size: 2.5rem; color: var(--text-muted); margin-bottom: 1rem;"></i>
+          <p style="color: var(--text-muted); font-size: 0.9rem;">No friends yet. Add a friend using their registered email!</p>
+        </div>
+        <div id="friendsList" style="display: flex; flex-direction: column; gap: 0.75rem;"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Right: Shared Expenses -->
+  <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+
+    <!-- Others Owe Me -->
+    <div class="card">
+      <h3 style="font-size: 1rem; font-weight: 700; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+        <i class="fa-solid fa-arrow-down" style="color: var(--success);"></i> Others Owe Me
+      </h3>
+      <div id="owedToMeContainer">
+        <p class="text-muted" id="owedToMeEmpty" style="font-size: 0.88rem;">No pending amounts from friends.</p>
+        <div id="owedToMeList" style="display: flex; flex-direction: column; gap: 0.65rem;"></div>
+      </div>
+    </div>
+
+    <!-- I Owe Others -->
+    <div class="card">
+      <h3 style="font-size: 1rem; font-weight: 700; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+        <i class="fa-solid fa-arrow-up" style="color: var(--danger);"></i> I Owe Others
+      </h3>
+      <div id="iOweContainer">
+        <p class="text-muted" id="iOweEmpty" style="font-size: 0.88rem;">You don't owe anyone right now 🎉</p>
+        <div id="iOweList" style="display: flex; flex-direction: column; gap: 0.65rem;"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Add Friend Modal -->
+<div class="modal-overlay" id="addFriendModal">
+  <div class="modal-card" style="max-width: 420px;">
+    <div class="modal-header">
+      <h3 class="modal-title"><i class="fa-solid fa-user-plus" style="color: var(--primary);"></i> Add Friend</h3>
+      <button type="button" class="modal-close-btn" id="closeAddFriendModal"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="modal-body">
+      <p class="text-muted" style="font-size: 0.88rem; margin-bottom: 1.25rem;">
+        Enter your friend's registered 10-digit mobile number or email address to send a friend request.
+      </p>
+      <div class="form-group">
+        <label class="form-label" for="friendEmailInput">Mobile Number or Email <span class="required">*</span></label>
+        <div style="position: relative;">
+          <input type="text" id="friendEmailInput" class="form-control" placeholder="e.g. 9876543210 or name@example.com" style="padding-left: 2.75rem;">
+          <i class="fa-solid fa-address-book" style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--text-muted);"></i>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-secondary" id="cancelAddFriendBtn">Cancel</button>
+      <button type="button" class="btn btn-primary" id="submitAddFriendBtn">
+        <i class="fa-solid fa-paper-plane"></i> Send Request
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  let friends = [];
+
+  // --- Formatting ---
+  const fmt = (n) => '₹' + parseFloat(n).toLocaleString('en-IN', {minimumFractionDigits: 2});
+
+  // --- Load All Data ---
+  async function loadAll() {
+    await Promise.all([loadFriends(), loadRequests(), loadSharedExpenses()]);
+  }
+
+  // --- Friends ---
+  async function loadFriends() {
+    const res = await fetch('/api/friends');
+    const data = await res.json();
+    if (!data.success) return;
+    friends = data.friends;
+    document.getElementById('statFriendsCount').textContent = friends.length;
+
+    const list = document.getElementById('friendsList');
+    const empty = document.getElementById('friendsEmptyState');
+    list.innerHTML = '';
+
+    if (friends.length === 0) {
+      empty.style.display = 'block';
+    } else {
+      empty.style.display = 'none';
+      friends.forEach(f => {
+        const row = document.createElement('div');
+        row.style.cssText = 'display:flex;align-items:center;gap:0.85rem;padding:0.75rem;border-radius:var(--radius-md);background:var(--bg-card-alt,rgba(99,102,241,0.05));border:1px solid var(--border-color);';
+        row.innerHTML = `
+          <div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1rem;flex-shrink:0;">
+            ${f.name[0].toUpperCase()}
+          </div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-weight:600;font-size:0.93rem;">${escHtml(f.name)}</div>
+            <div style="font-size:0.8rem;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escHtml(f.email)}</div>
+          </div>
+          <button class="btn btn-secondary btn-sm" onclick="removeFriend('${f.friendship_id}','${escHtml(f.name)}')" title="Remove Friend" style="padding:0.3rem 0.6rem;">
+            <i class="fa-solid fa-user-xmark"></i>
+          </button>`;
+        list.appendChild(row);
+      });
+    }
+  }
+
+  // --- Friend Requests ---
+  async function loadRequests() {
+    const res = await fetch('/api/friends/requests');
+    const data = await res.json();
+    if (!data.success) return;
+    const reqs = data.requests;
+    const card = document.getElementById('requestsCard');
+    const list = document.getElementById('requestsList');
+    const badge = document.getElementById('requestsBadge');
+    document.getElementById('statRequestsCount').textContent = reqs.length;
+    badge.textContent = reqs.length;
+
+    if (reqs.length === 0) { card.style.display = 'none'; return; }
+    card.style.display = 'block';
+    list.innerHTML = '';
+    reqs.forEach(r => {
+      const row = document.createElement('div');
+      row.style.cssText = 'display:flex;align-items:center;gap:0.85rem;padding:0.7rem;border-radius:var(--radius-md);background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.25);';
+      row.innerHTML = `
+        <div style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#f59e0b,#ef4444);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.95rem;flex-shrink:0;">
+          ${r.name[0].toUpperCase()}
+        </div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-weight:600;font-size:0.9rem;">${escHtml(r.name)}</div>
+          <div style="font-size:0.78rem;color:var(--text-muted);">${escHtml(r.email)}</div>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="acceptRequest('${r.id}')" style="padding:0.3rem 0.65rem;font-size:0.8rem;">
+          <i class="fa-solid fa-check"></i> Accept
+        </button>
+        <button class="btn btn-secondary btn-sm" onclick="rejectRequest('${r.id}')" style="padding:0.3rem 0.55rem;font-size:0.8rem;">
+          <i class="fa-solid fa-xmark"></i>
+        </button>`;
+      list.appendChild(row);
+    });
+  }
+
+  // --- Shared Expenses ---
+  async function loadSharedExpenses() {
+    const res = await fetch('/api/shared-expenses');
+    const data = await res.json();
+    if (!data.success) return;
+
+    const owedToMe = data.owed_to_me.filter(s => s.status === 'pending');
+    const iOwe = data.i_owe.filter(s => s.status === 'pending');
+
+    const totalOwed = owedToMe.reduce((s, r) => s + parseFloat(r.amount), 0);
+    const totalIOwe = iOwe.reduce((s, r) => s + parseFloat(r.amount), 0);
+    document.getElementById('statOwedToMe').textContent = fmt(totalOwed);
+    document.getElementById('statIOwe').textContent = fmt(totalIOwe);
+
+    renderSharedList('owedToMeList', 'owedToMeEmpty', owedToMe, 'success', true);
+    renderSharedList('iOweList', 'iOweEmpty', iOwe, 'danger', false);
+  }
+
+  function renderSharedList(listId, emptyId, items, color, iAmPayer) {
+    const list = document.getElementById(listId);
+    const empty = document.getElementById(emptyId);
+    list.innerHTML = '';
+    if (items.length === 0) { empty.style.display = 'block'; return; }
+    empty.style.display = 'none';
+    items.forEach(s => {
+      const row = document.createElement('div');
+      row.style.cssText = `display:flex;align-items:center;gap:0.75rem;padding:0.7rem 0.85rem;border-radius:var(--radius-md);background:rgba(${color==='success'?'16,185,129':'239,68,68'},0.07);border:1px solid rgba(${color==='success'?'16,185,129':'239,68,68'},0.2);font-size:0.88rem;`;
+      row.innerHTML = `
+        <div style="flex:1;min-width:0;">
+          <div style="font-weight:600;">${escHtml(s.friend_name)}</div>
+          <div style="color:var(--text-muted);font-size:0.8rem;">${escHtml(s.description)}</div>
+        </div>
+        <strong style="color:var(--${color});">${fmt(s.amount)}</strong>
+        <button class="btn btn-secondary btn-sm" onclick="settleExpense('${s.id}')" style="padding:0.25rem 0.55rem;font-size:0.78rem;" title="Mark Settled">
+          <i class="fa-solid fa-check-double"></i> Settle
+        </button>`;
+      list.appendChild(row);
+    });
+  }
+
+  // --- Actions ---
+  window.removeFriend = async (fid, name) => {
+    if (!confirm(`Remove ${name} from contacts?`)) return;
+    const res = await fetch(`/api/friends/${fid}`, { method: 'DELETE' });
+    const data = await res.json();
+    showToast(data.success ? 'Removed' : 'Error', data.message, data.success ? 'warning' : 'danger');
+    if (data.success) loadAll();
+  };
+
+  window.acceptRequest = async (rid) => {
+    const res = await fetch(`/api/friends/${rid}/accept`, { method: 'POST' });
+    const data = await res.json();
+    showToast(data.success ? '✅ Accepted' : 'Error', data.message, data.success ? 'success' : 'danger');
+    if (data.success) loadAll();
+  };
+
+  window.rejectRequest = async (rid) => {
+    const res = await fetch(`/api/friends/${rid}/reject`, { method: 'POST' });
+    const data = await res.json();
+    showToast('Declined', data.message, 'warning');
+    if (data.success) loadAll();
+  };
+
+  window.settleExpense = async (sid) => {
+    const res = await fetch(`/api/shared-expenses/${sid}/settle`, { method: 'POST' });
+    const data = await res.json();
+    showToast(data.success ? '✅ Settled' : 'Error', data.message, data.success ? 'success' : 'danger');
+    if (data.success) loadAll();
+  };
+
+  function escHtml(str) {
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  // --- Add Friend Modal ---
+  document.getElementById('addFriendBtn').addEventListener('click', () => {
+    document.getElementById('addFriendModal').classList.add('active');
+    document.getElementById('friendEmailInput').value = '';
+    setTimeout(() => document.getElementById('friendEmailInput').focus(), 100);
+  });
+  document.getElementById('closeAddFriendModal').addEventListener('click', () => document.getElementById('addFriendModal').classList.remove('active'));
+  document.getElementById('cancelAddFriendBtn').addEventListener('click', () => document.getElementById('addFriendModal').classList.remove('active'));
+
+  document.getElementById('submitAddFriendBtn').addEventListener('click', async () => {
+    const identifier = document.getElementById('friendEmailInput').value.trim();
+    if (!identifier) { showToast('Required', 'Please enter a mobile number or email address.', 'warning'); return; }
+    const btn = document.getElementById('submitAddFriendBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<div class="spinner" style="width:14px;height:14px;border-width:2px;display:inline-block;"></div> Sending...';
+    try {
+      const res = await fetch('/api/friends/add', {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ identifier })
+      });
+      const data = await res.json();
+      showToast(data.success ? '🎉 Request Sent!' : 'Failed', data.message, data.success ? 'success' : 'danger');
+      if (data.success) {
+        document.getElementById('addFriendModal').classList.remove('active');
+        loadAll();
+      }
+    } catch(e) {
+      showToast('Error', 'Network error.', 'danger');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Send Request';
+    }
+  });
+
+  loadAll();
+});
+</script>
+{% endblock %}

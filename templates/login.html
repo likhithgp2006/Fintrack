@@ -1,0 +1,115 @@
+{% extends "layout.html" %}
+
+{% block public_content %}
+<div style="min-height: 100vh; background: var(--bg-body); display: flex; align-items: center; justify-content: center; padding: 1.5rem;">
+  
+  <div class="card" style="width: 100%; max-width: 440px; padding: 2.5rem 2rem;">
+    
+    <div style="text-align: center; margin-bottom: 2rem;">
+      <div class="logo-icon" style="margin: 0 auto 1rem; width: 52px; height: 52px; font-size: 1.6rem;">
+        <i class="fa-solid fa-wallet"></i>
+      </div>
+      <h2 style="font-size: 1.6rem; font-weight: 700; margin-bottom: 0.35rem;">Welcome Back</h2>
+      <p class="text-muted" style="font-size: 0.9rem;">Sign in to access your personal finance dashboard</p>
+    </div>
+
+    <form id="loginForm">
+      <div class="form-group">
+        <label class="form-label" for="loginEmail">Email Address <span class="required">*</span></label>
+        <input type="email" id="loginEmail" class="form-control" placeholder="name@example.com" required autocomplete="email">
+      </div>
+
+      <div class="form-group">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
+          <label class="form-label" for="loginPassword" style="margin-bottom: 0;">Password <span class="required">*</span></label>
+          <a href="{{ url_for('forgot_password_page') }}" style="font-size: 0.82rem; color: var(--primary); text-decoration: none; font-weight: 600;">
+            Forgot Password?
+          </a>
+        </div>
+        <div class="password-field-wrapper">
+          <input type="password" id="loginPassword" class="form-control" placeholder="••••••••" required autocomplete="current-password">
+          <button type="button" class="password-toggle-btn" id="toggleLoginPassword" title="Show/Hide Password">
+            <i class="fa-solid fa-eye" id="loginEyeIcon"></i>
+          </button>
+        </div>
+      </div>
+
+      <button type="submit" id="loginSubmitBtn" class="btn btn-primary" style="width: 100%; margin-top: 0.75rem;">
+        <i class="fa-solid fa-right-to-bracket"></i> Sign In
+      </button>
+    </form>
+
+    <div class="auth-switch-box">
+      <span>Don't have an account?</span>
+      <a href="{{ url_for('register_page') }}" class="auth-switch-link">Create Account</a>
+    </div>
+
+    <div style="text-align: center; margin-top: 1.25rem;">
+      <a href="{{ url_for('index_page') }}" style="font-size: 0.85rem; color: var(--text-muted);">
+        <i class="fa-solid fa-arrow-left"></i> Back to Home
+      </a>
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  // Password Show/Hide Toggle
+  const toggleBtn = document.getElementById('toggleLoginPassword');
+  const passwordInput = document.getElementById('loginPassword');
+  const eyeIcon = document.getElementById('loginEyeIcon');
+
+  if (toggleBtn && passwordInput && eyeIcon) {
+    toggleBtn.addEventListener('click', () => {
+      const isPassword = passwordInput.type === 'password';
+      passwordInput.type = isPassword ? 'text' : 'password';
+      eyeIcon.className = isPassword ? 'fa-solid fa-eye-slash' : 'fa-solid fa-eye';
+    });
+  }
+
+  // Form Submit Handler
+  const form = document.getElementById('loginForm');
+  if (form) {
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('loginEmail').value.trim();
+      const password = document.getElementById('loginPassword').value;
+
+      if (!email || !password) {
+        showToast('Validation Error', 'Please enter your email and password.', 'warning');
+        return;
+      }
+
+      const submitBtn = document.getElementById('loginSubmitBtn');
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = `<div class="spinner" style="width:18px;height:18px;border-width:2px;display:inline-block;"></div> Signing in...`;
+
+      try {
+        const res = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast('Welcome Back!', data.message || 'Login successful.', 'success');
+          setTimeout(() => {
+            window.location.href = '/dashboard';
+          }, 500);
+        } else {
+          showToast('Login Failed', data.message || 'Invalid email or password.', 'danger');
+        }
+      } catch (err) {
+        console.error('Login error:', err);
+        showToast('Error', 'Server connection error.', 'danger');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = `<i class="fa-solid fa-right-to-bracket"></i> Sign In`;
+      }
+    });
+  }
+});
+</script>
+{% endblock %}
