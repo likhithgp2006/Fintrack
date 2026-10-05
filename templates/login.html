@@ -87,10 +87,11 @@ document.addEventListener('DOMContentLoaded', () => {
       submitBtn.innerHTML = `<div class="spinner" style="width:18px;height:18px;border-width:2px;display:inline-block;"></div> Signing in...`;
 
       try {
+        const encryptedPassword = await window.encryptClientPassword(password);
         const res = await fetch('/api/login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password })
+          body: JSON.stringify({ email, password: encryptedPassword })
         });
         const data = await res.json();
         if (data.success) {

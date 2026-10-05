@@ -2,6 +2,14 @@
 
 A full-stack, responsive web application for personal expense tracking, budgeting, and financial analytics built with **HTML5, CSS3, Vanilla JavaScript, Python Flask**, and persistent **CSV file storage**.
 
+[![GitHub Repo](https://img.shields.io/badge/GitHub-likhithgp2006%2FFintrack-blue?logo=github)](https://github.com/likhithgp2006/Fintrack)
+
+---
+
+## 🌐 Live Deployment
+- **Live Demo Link:** `[Paste your deployment link here]` *(Send your link and it will be updated here!)*
+- **GitHub Repository:** [https://github.com/likhithgp2006/Fintrack](https://github.com/likhithgp2006/Fintrack)
+
 ---
 
 ## 🌟 Key Features
@@ -255,91 +263,40 @@ id,room_code,user_id,member_name,member_contact,share_amount,status,updated_at
 
 ---
 
-## 🎓 BCA Project Demonstration Flow
+## 🔐 Security & Privacy Architecture
 
-Follow this step-by-step sequence when demonstrating the application for viva evaluation:
-
-1. **Landing Page**: Open `http://127.0.0.1:5050/`, demonstrate hero section and feature cards.
-2. **Login**: Click Login, use demo credentials (`likhith@example.com` / `password123`).
-3. **Dashboard Overview**: Show Total Income (₹57,500), Total Expenses, Net Balance, Highest Expense, Category Doughnut Chart, and Monthly Bar Chart.
-4. **Add Transaction**: Click "+ Add Transaction", add a new Food expense for ₹750 via UPI with notes. Submit and observe automatic redirect & metric updates.
-5. **Transactions Page**: Show search bar, category filter, date filter, sorting by Amount, Edit Modal popup, and Delete confirmation.
-6. **Budgets Page**: Demonstrate category progress bars, status badges, and 80%/100% budget alerts.
-7. **Reports & Analytics**: Select Month/Year, view category breakdown percentages, click Print/Save PDF.
-8. **Dark Mode Toggle**: Click theme moon icon in top navbar to showcase seamless dark/light mode transition.
-9. **CSV Export**: Click "Export CSV" to download the transaction data file.
-
----
-
-## 🎤 Viva Voce Questions & Answers
-
-### Q1: Why did you choose Python Flask for this project?
-**Answer:** Flask is a micro web framework for Python. It is lightweight, flexible, and allows us to easily build RESTful API endpoints using JSON for seamless communication with standard JavaScript frontends without unnecessary boilerplate code.
-
-### Q2: How is data persisted without a relational SQL database?
-**Answer:** We implemented a custom file-based database layer in `csv_db.py` using Python's built-in `csv` module. Data is structured in standard CSV files (`users.csv`, `expenses.csv`, `categories.csv`, `budgets.csv`). Thread locking (`threading.Lock()`) is utilized to guarantee data integrity during concurrent read/write operations.
-
-### Q3: How are passwords secured in `users.csv`?
-**Answer:** Passwords are never stored in plain text. We utilize Werkzeug's `generate_password_hash()` which uses PBKDF2 with SHA-256 algorithm and salt. During login, `check_password_hash()` compares the input with the stored hash securely.
-
-### Q4: Explain the calculation for Net Balance.
-**Answer:** `Net Balance = Total Income - Total Expenses`. The backend iterates through the user's transactions in `expenses.csv`, sums all records with `type == 'Income'`, sums records with `type == 'Expense'`, and calculates the net difference.
-
-### Q5: How do budget warnings work?
-**Answer:** When `/api/budgets` is queried, the server calculates the total expenses incurred for each category in the current month. It compares total category spending against the set budget limit. If spending exceeds 80%, a `warning` status is assigned; if spending exceeds 100%, a `danger` status is returned, triggering dynamic toast notifications on the frontend.
-
-### Q6: How does the frontend communicate with the backend?
-**Answer:** The frontend uses standard ES6 `fetch()` API calls to consume JSON REST endpoints (`GET`, `POST`, `PUT`, `DELETE`). The response JSON updates the DOM dynamically without requiring full browser page reloads.
-
-### Q7: How is Dark Mode preference saved across sessions?
-**Answer:** When the user clicks the theme toggle button, the selected theme (`dark` or `light`) is saved in the browser's `localStorage`. On page load, `auth.js` checks `localStorage.getItem('theme')` and sets the `data-theme` attribute on the `<html>` root element.
-
-### Q8: What prevents User A from accessing User B's transactions?
-**Answer:** Session-based authentication handles authorization. Each expense record stores a `user_id`. Every API endpoint extracts `user_id = session['user_id']` and filters records so users can only view, edit, or delete their own data.
-
-### Q9: How is Chart.js integrated with dynamic Flask data?
-**Answer:** Flask provides aggregated category totals and monthly spending through `/api/dashboard`. `dashboard.js` receives the JSON payload and passes labels and numerical arrays to Chart.js dataset objects, rendering responsive HTML5 canvas graphs.
-
-### Q10: How can this project be scaled in the future?
-**Answer:** Future enhancements include migrating `csv_db.py` to PostgreSQL/MySQL via SQLAlchemy, integrating Bank API auto-sync, OCR receipt scanning using OpenCV/Tesseract, and setting up automated monthly PDF email digests.
-
----
-
-## 🔮 Future Enhancements
-- Integration with SQL Database (PostgreSQL / SQLite).
-- Receipt image upload & OCR scanning.
-- Automated email alerts for budget overspending.
-- Recurring transaction auto-scheduler.
+- **Client-Side Transmission Encryption**: Passwords are encrypted in the browser via SHA-256 before HTTP dispatch, preventing plain-text exposure in Browser DevTools / Network Inspect.
+- **Server-Side Password Hashing**: Server salts and hashes the client payload with Werkzeug's `scrypt` / `pbkdf2:sha256` before saving to storage. Plain-text passwords are never logged, stored, or transmitted.
+- **Session Authentication**: Server-side Flask session cookies prevent unauthorized access across user datasets.
+- **Data Protection**: User database files and private environment variables (`.env`) are strictly excluded via `.gitignore`.
 
 ---
 
 ## 🚀 Deployment Guide
 
-This app can be deployed on **Render**, **Railway**, **PythonAnywhere**, or any platform that supports Python/Flask.
+This app can be deployed on **Render**, **Railway**, **PythonAnywhere**, or any Python hosting provider.
 
-### Step 1: Push to GitHub
-```bash
-git add .
-git commit -m "deploy"
-git push origin main
-```
+### Live Deployment URL
+> 🔗 **Production Link:** `[Add your deployment link here]`
+> *(Once deployed, update this line with your live website address)*
 
-### Step 2: Connect to Render (Recommended — Free)
+### Step 1: Connect to Render (Recommended — Free)
 1. Go to [render.com](https://render.com) → **New Web Service**
-2. Connect your GitHub repo (`Fintrack`)
-3. Set:
+2. Connect your GitHub repo (`likhithgp2006/Fintrack`)
+3. Set the following build settings:
+   - **Environment:** `Python 3`
    - **Build Command:** `pip install -r requirements.txt`
    - **Start Command:** `gunicorn app:app`
 4. Add environment variables (see below)
-5. Click **Deploy**
+5. Click **Deploy Web Service**
 
 ---
 
-## ⚙️ Post-Deployment: Configure SMS OTP (Required for Forgot Password)
+## ⚙️ Post-Deployment: Configure SMS OTP (For Forgot Password)
 
-> **Important:** After deploying, you MUST configure an SMS provider for the Forgot Password feature to send real OTPs to users' mobile numbers.
+> **Important:** After deploying, configure an SMS gateway for the Forgot Password feature to deliver real SMS OTPs to user mobile phones.
 >
-> Without configuration, the app runs in **Demo Mode** — the OTP is displayed on screen instead of being sent via SMS (useful for local testing only).
+> Without configuration, the app runs in **Demo Mode** (the OTP is shown on screen for testing).
 
 ### Option A: Fast2SMS (Recommended for India 🇮🇳 — Free tier available)
 
@@ -351,14 +308,10 @@ git push origin main
 FAST2SMS_API_KEY=your_fast2sms_api_key_here
 ```
 
-✅ Works instantly with all Indian mobile numbers (10-digit).
-
----
-
 ### Option B: Twilio (International 🌍)
 
-1. Sign up at **[twilio.com](https://www.twilio.com)** (free trial gives ~$15 credit)
-2. Get your **Account SID**, **Auth Token**, and a **Twilio Phone Number**
+1. Sign up at **[twilio.com](https://www.twilio.com)**
+2. Copy your **Account SID**, **Auth Token**, and **Twilio Phone Number**
 3. Add these environment variables:
 
 ```env
@@ -371,17 +324,17 @@ TWILIO_PHONE_NUMBER=+1xxxxxxxxxx
 
 ### Environment Variables Summary
 
-Add these in your hosting platform's **Environment Variables** panel (e.g. Render Dashboard → Environment):
+Add these in your hosting platform's **Environment Variables** panel:
 
 | Variable | Required | Description |
 |---|---|---|
-| `SECRET_KEY` | ✅ Yes | Random secret string for Flask sessions |
-| `FAST2SMS_API_KEY` | ⚡ For SMS OTP | API key from fast2sms.com (India) |
+| `SECRET_KEY` | ✅ Yes | Random string for securing Flask user sessions |
+| `FAST2SMS_API_KEY` | ⚡ For SMS OTP | API key from Fast2SMS (India 10-digit mobile) |
 | `TWILIO_ACCOUNT_SID` | ⚡ For SMS OTP | Twilio Account SID (International) |
 | `TWILIO_AUTH_TOKEN` | ⚡ For SMS OTP | Twilio Auth Token |
 | `TWILIO_PHONE_NUMBER` | ⚡ For SMS OTP | Twilio sender phone number |
 
-> See `.env.example` in the repo for the full template.
+---
 
 ### How SMS OTP Works
 
@@ -390,7 +343,7 @@ User clicks "Forgot Password"
         ↓
 Enters registered 10-digit mobile number
         ↓
-Server generates 6-digit OTP (valid 15 minutes)
+Server generates secure 6-digit OTP (valid 15 minutes)
         ↓
   ┌─────────────────────────────────────┐
   │  SMS API configured?                │
@@ -404,4 +357,6 @@ User enters OTP → Sets new password
 
 ---
 
-**Developed for BCA Final Year / Mini Project — Fintrack Smart Expense Tracker.**
+## 📄 License
+Open source and available under the [MIT License](LICENSE).
+

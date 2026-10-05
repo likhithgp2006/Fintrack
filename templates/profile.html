@@ -193,10 +193,18 @@ document.addEventListener('DOMContentLoaded', () => {
       btn.innerHTML = `<div class="spinner" style="width:16px;height:16px;border-width:2px;display:inline-block;"></div> Updating...`;
 
       try {
+        const encryptedCurrent = await window.encryptClientPassword(current_password);
+        const encryptedNew = await window.encryptClientPassword(new_password);
+        const encryptedConfirm = await window.encryptClientPassword(confirm_password);
+
         const res = await fetch('/api/profile/change-password', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ current_password, new_password, confirm_password })
+          body: JSON.stringify({ 
+            current_password: encryptedCurrent, 
+            new_password: encryptedNew, 
+            confirm_password: encryptedConfirm 
+          })
         });
         const data = await res.json();
 

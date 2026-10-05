@@ -133,10 +133,19 @@ document.addEventListener('DOMContentLoaded', () => {
       submitBtn.innerHTML = `<div class="spinner" style="width:18px;height:18px;border-width:2px;display:inline-block;"></div> Registering...`;
 
       try {
+        const encryptedPassword = await window.encryptClientPassword(password);
+        const encryptedConfirmPassword = await window.encryptClientPassword(confirm_password);
+
         const res = await fetch('/api/register', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, email, phone, password, confirm_password })
+          body: JSON.stringify({ 
+            name, 
+            email, 
+            phone, 
+            password: encryptedPassword, 
+            confirm_password: encryptedConfirmPassword 
+          })
         });
         const data = await res.json();
         if (data.success) {
