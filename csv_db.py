@@ -107,7 +107,7 @@ def init_db():
         if not os.path.exists(SPLIT_ROOM_EXPENSES_CSV):
             with open(SPLIT_ROOM_EXPENSES_CSV, mode='w', newline='', encoding='utf-8') as f:
                 writer = csv.writer(f)
-                writer.writerow(['id', 'room_code', 'title', 'amount', 'added_by_name', 'created_at'])
+                writer.writerow(['id', 'room_code', 'title', 'category', 'amount', 'added_by_name', 'created_at'])
 
 # Helper functions for CSV CRUD
 

@@ -1,1 +1,5 @@
-id,room_code,title,amount,added_by_name,created_at
+id,room_code,title,category,amount,added_by_name,created_at
+1,ROOM-8950,Goa Trip,Travel,3000.00,Likhith GP,2026-10-06 20:19:18
+2,ROOM-8950,Beach Shack Lunch,Food,800.00,Likhith GP,2026-10-06 20:19:18
+3,ROOM-8950,Beer and Cocktails,Drinks,600.00,Likhith GP,2026-10-06 20:19:18
+4,ROOM-8950,Cab to Airport,Transport,400.00,Likhith GP,2026-10-06 20:19:18

@@ -2212,6 +2212,7 @@ def api_create_split_room():
     data = request.get_json() or {}
 
     title = data.get('title', '').strip() or 'Group Split'
+    category = (data.get('category') or 'Food').strip() or 'Food'
     total_amount = float(data.get('total_amount', 0))
     tip_pct = float(data.get('tip_pct', 0))
     tax_pct = float(data.get('tax_pct', 0))
@@ -2253,13 +2254,14 @@ def api_create_split_room():
         }
     )
 
-    # Initial base expense item logged
+    # Initial base expense item logged with selected category
     csv_db.append_csv(csv_db.SPLIT_ROOM_EXPENSES_CSV,
-        ['id', 'room_code', 'title', 'amount', 'added_by_name', 'created_at'],
+        ['id', 'room_code', 'title', 'category', 'amount', 'added_by_name', 'created_at'],
         {
             'id': str(csv_db.get_next_id(csv_db.SPLIT_ROOM_EXPENSES_CSV)),
             'room_code': room_code,
             'title': title or 'Base Bill',
+            'category': category,
             'amount': f"{total_amount:.2f}",
             'added_by_name': creator_name,
             'created_at': now_str
@@ -2406,6 +2408,7 @@ def api_add_split_room_expense(room_code):
     code = room_code.strip().upper()
     data = request.get_json() or {}
     exp_title = data.get('title', '').strip() or 'Extra Expense'
+    exp_category = (data.get('category') or 'Other').strip() or 'Other'
     amount = float(data.get('amount', 0))
 
     if amount <= 0:
@@ -2441,14 +2444,15 @@ def api_add_split_room_expense(room_code):
         members
     )
 
-    # 3. Log itemized expense in SPLIT_ROOM_EXPENSES_CSV
+    # 3. Log itemized expense with category in SPLIT_ROOM_EXPENSES_CSV
     added_by = session.get('user_name', 'Member')
     csv_db.append_csv(csv_db.SPLIT_ROOM_EXPENSES_CSV,
-        ['id', 'room_code', 'title', 'amount', 'added_by_name', 'created_at'],
+        ['id', 'room_code', 'title', 'category', 'amount', 'added_by_name', 'created_at'],
         {
             'id': str(csv_db.get_next_id(csv_db.SPLIT_ROOM_EXPENSES_CSV)),
             'room_code': code,
             'title': exp_title,
+            'category': exp_category,
             'amount': f"{amount:.2f}",
             'added_by_name': added_by,
             'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -2570,7 +2574,7 @@ def api_delete_split_room(room_code):
     expenses = csv_db.read_csv(csv_db.SPLIT_ROOM_EXPENSES_CSV)
     updated_expenses = [e for e in expenses if e.get('room_code', '').upper() != code]
     csv_db.write_csv(csv_db.SPLIT_ROOM_EXPENSES_CSV,
-        ['id', 'room_code', 'title', 'amount', 'added_by_name', 'created_at'],
+        ['id', 'room_code', 'title', 'category', 'amount', 'added_by_name', 'created_at'],
         updated_expenses
     )
 
@@ -2613,7 +2617,7 @@ def api_clear_all_split_rooms():
     expenses = csv_db.read_csv(csv_db.SPLIT_ROOM_EXPENSES_CSV)
     remaining_expenses = [e for e in expenses if e.get('room_code', '').upper() not in user_codes]
     csv_db.write_csv(csv_db.SPLIT_ROOM_EXPENSES_CSV,
-        ['id', 'room_code', 'title', 'amount', 'added_by_name', 'created_at'],
+        ['id', 'room_code', 'title', 'category', 'amount', 'added_by_name', 'created_at'],
         remaining_expenses
     )
 
