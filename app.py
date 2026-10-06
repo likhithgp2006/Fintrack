@@ -53,6 +53,7 @@ import csv_db
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'smart_expense_tracker_bca_secret_key_2026')
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=365)
 CORS(app)
 
 # Initialize database CSVs on startup
@@ -188,6 +189,7 @@ def api_register():
     fieldnames = ['id', 'name', 'email', 'phone', 'password_hash', 'created_at']
     csv_db.append_csv(csv_db.USERS_CSV, fieldnames, new_user)
 
+    session.permanent = True
     session['user_id'] = user_id
     session['user_name'] = name
     session['user_email'] = email
@@ -218,6 +220,8 @@ def api_login():
     if not target_user or not check_password_hash(target_user['password_hash'], password):
         return jsonify({'success': False, 'message': 'Invalid email or password.'}), 401
 
+    # Make session persistent until logout
+    session.permanent = True
     session['user_id'] = target_user['id']
     session['user_name'] = target_user['name']
     session['user_email'] = target_user['email']
