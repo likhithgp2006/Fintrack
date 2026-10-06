@@ -2253,18 +2253,46 @@ def api_create_split_room():
         }
     )
 
+    # Initial base expense item logged
+    csv_db.append_csv(csv_db.SPLIT_ROOM_EXPENSES_CSV,
+        ['id', 'room_code', 'title', 'amount', 'added_by_name', 'created_at'],
+        {
+            'id': str(csv_db.get_next_id(csv_db.SPLIT_ROOM_EXPENSES_CSV)),
+            'room_code': room_code,
+            'title': title or 'Base Bill',
+            'amount': f"{total_amount:.2f}",
+            'added_by_name': creator_name,
+            'created_at': now_str
+        }
+    )
+
     # All registered users map for auto-linking by contact
     users = csv_db.read_csv(csv_db.USERS_CSV)
     user_by_email = {u.get('email', '').strip().lower(): u for u in users}
     user_by_phone = {normalize_phone(u.get('phone', '')): u for u in users if u.get('phone')}
 
     # Save members and sync with shared_expenses if linked
-    for m in members_data:
+    for idx, m in enumerate(members_data):
         m_id = str(csv_db.get_next_id(csv_db.SPLIT_ROOM_MEMBERS_CSV))
         m_name = m.get('name', '').strip()
         m_contact = m.get('contact', '').strip()
         m_share = float(m.get('share_amount', 0))
-        m_user_id = m.get('user_id', '')
+        m_user_id = str(m.get('user_id', '')).strip()
+
+        # Is this the creator / host row?
+        is_creator_share = (
+            m_user_id == uid or 
+            m.get('is_host') is True or
+            (idx == 0 and not m_contact) or
+            m_name.lower() in ('you (host)', 'you', 'me', 'host', creator_name.lower())
+        )
+
+        if is_creator_share:
+            m_user_id = uid
+            m_name = creator_name  # Always use actual host name!
+            initial_status = 'settled'
+        else:
+            initial_status = 'pending'
 
         # Auto-match user_id if not given
         if not m_user_id and m_contact:
@@ -2273,12 +2301,8 @@ def api_create_split_room():
             matched_u = user_by_email.get(contact_clean) or user_by_phone.get(contact_digits)
             if matched_u:
                 m_user_id = matched_u['id']
-                if not m_name:
+                if not m_name or m_name.startswith('Friend'):
                     m_name = matched_u['name']
-
-        # Determine initial status: creator's own share is 'settled', others 'pending'
-        is_creator_share = (m_user_id == uid) or (m_name.lower() in ('you', 'me', creator_name.lower()) and not m_contact)
-        initial_status = 'settled' if is_creator_share else 'pending'
 
         csv_db.append_csv(csv_db.SPLIT_ROOM_MEMBERS_CSV,
             ['id', 'room_code', 'user_id', 'member_name', 'member_contact', 'share_amount', 'status', 'updated_at'],
@@ -2335,23 +2359,265 @@ def api_get_split_room(room_code):
     current_uid = session.get('user_id')
     current_phone = normalize_phone(session.get('user_phone', ''))
 
-    # Check if current user is identified in room
+    creator_uid = room.get('creator_user_id')
+    creator_name = room.get('creator_name', 'Host')
+
+    # Identify host and current user
     for m in members:
+        is_host = (
+            m.get('user_id') == creator_uid or
+            (m.get('member_name', '').strip().lower() in ('you (host)', 'you', 'me', 'host', creator_name.lower()) and not m.get('member_contact'))
+        )
+        if is_host:
+            m['is_host'] = True
+            m['member_name'] = creator_name  # Show Host's actual name to everyone!
+            m['user_id'] = creator_uid
+        else:
+            m['is_host'] = False
+
         m_phone = normalize_phone(m.get('member_contact', ''))
         if current_uid and m.get('user_id') == current_uid:
+            m['is_current_user'] = True
+        elif is_host and current_uid and creator_uid == current_uid:
             m['is_current_user'] = True
         elif current_phone and m_phone and m_phone == current_phone:
             m['is_current_user'] = True
         else:
             m['is_current_user'] = False
 
+    # Retrieve all itemized expenses logged in this room
+    all_expenses = csv_db.read_csv(csv_db.SPLIT_ROOM_EXPENSES_CSV)
+    room_expenses = [e for e in all_expenses if e.get('room_code', '').upper() == code]
+
     return jsonify({
         'success': True,
         'room': room,
         'members': members,
+        'expenses': room_expenses,
         'current_user_id': current_uid,
-        'is_creator': current_uid and room.get('creator_user_id') == current_uid
+        'is_creator': bool(current_uid and creator_uid == current_uid)
     })
+
+
+@app.route('/api/split-rooms/<string:room_code>/add-expense', methods=['POST'])
+@login_required
+def api_add_split_room_expense(room_code):
+    """Add an extra amount / itemized expense to an existing live Split Room and recalculate shares."""
+    code = room_code.strip().upper()
+    data = request.get_json() or {}
+    exp_title = data.get('title', '').strip() or 'Extra Expense'
+    amount = float(data.get('amount', 0))
+
+    if amount <= 0:
+        return jsonify({'success': False, 'message': 'Please enter a valid expense amount greater than 0.'}), 400
+
+    rooms = csv_db.read_csv(csv_db.SPLIT_ROOMS_CSV)
+    room = next((r for r in rooms if r.get('room_code', '').upper() == code), None)
+    if not room:
+        return jsonify({'success': False, 'message': 'Room not found.'}), 404
+
+    members = csv_db.read_csv(csv_db.SPLIT_ROOM_MEMBERS_CSV)
+    room_members = [m for m in members if m.get('room_code', '').upper() == code]
+    if not room_members:
+        return jsonify({'success': False, 'message': 'No members found in this room.'}), 400
+
+    # 1. Update Room Total Amount
+    current_total = float(room.get('total_amount', 0))
+    new_total = current_total + amount
+    room['total_amount'] = f"{new_total:.2f}"
+    csv_db.write_csv(csv_db.SPLIT_ROOMS_CSV,
+        ['room_code', 'creator_user_id', 'creator_name', 'title', 'total_amount', 'tip_pct', 'tax_pct', 'split_type', 'status', 'created_at'],
+        rooms
+    )
+
+    # 2. Recalculate member shares equally
+    new_share_each = new_total / len(room_members)
+    for m in room_members:
+        m['share_amount'] = f"{new_share_each:.2f}"
+        m['updated_at'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+    csv_db.write_csv(csv_db.SPLIT_ROOM_MEMBERS_CSV,
+        ['id', 'room_code', 'user_id', 'member_name', 'member_contact', 'share_amount', 'status', 'updated_at'],
+        members
+    )
+
+    # 3. Log itemized expense in SPLIT_ROOM_EXPENSES_CSV
+    added_by = session.get('user_name', 'Member')
+    csv_db.append_csv(csv_db.SPLIT_ROOM_EXPENSES_CSV,
+        ['id', 'room_code', 'title', 'amount', 'added_by_name', 'created_at'],
+        {
+            'id': str(csv_db.get_next_id(csv_db.SPLIT_ROOM_EXPENSES_CSV)),
+            'room_code': code,
+            'title': exp_title,
+            'amount': f"{amount:.2f}",
+            'added_by_name': added_by,
+            'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        }
+    )
+
+    # 4. Sync corresponding shared_expenses entries if any
+    shared = csv_db.read_csv(csv_db.SHARED_EXPENSES_CSV)
+    for s in shared:
+        if f"[{code}]" in s.get('description', ''):
+            s['amount'] = f"{new_share_each:.2f}"
+    csv_db.write_csv(csv_db.SHARED_EXPENSES_CSV,
+        ['id', 'payer_user_id', 'payee_user_id', 'amount', 'description', 'split_type', 'status', 'created_at'],
+        shared
+    )
+
+    return jsonify({
+        'success': True,
+        'message': f"Added ₹{amount:.2f} ({exp_title}) to room. New total: ₹{new_total:.2f} (₹{new_share_each:.2f} each)!",
+        'new_total': f"{new_total:.2f}",
+        'new_per_person': f"{new_share_each:.2f}"
+    })
+
+
+@app.route('/api/split-rooms/<string:room_code>/update', methods=['PUT', 'POST'])
+@login_required
+def api_update_split_room_details(room_code):
+    """Directly update total bill amount or title for a live Split Room."""
+    code = room_code.strip().upper()
+    data = request.get_json() or {}
+    new_total = float(data.get('total_amount', 0))
+    new_title = data.get('title', '').strip()
+
+    if new_total <= 0:
+        return jsonify({'success': False, 'message': 'Please enter a valid bill amount greater than 0.'}), 400
+
+    rooms = csv_db.read_csv(csv_db.SPLIT_ROOMS_CSV)
+    room = next((r for r in rooms if r.get('room_code', '').upper() == code), None)
+    if not room:
+        return jsonify({'success': False, 'message': 'Room not found.'}), 404
+
+    members = csv_db.read_csv(csv_db.SPLIT_ROOM_MEMBERS_CSV)
+    room_members = [m for m in members if m.get('room_code', '').upper() == code]
+    if not room_members:
+        return jsonify({'success': False, 'message': 'No members in room.'}), 400
+
+    room['total_amount'] = f"{new_total:.2f}"
+    if new_title:
+        room['title'] = new_title
+
+    csv_db.write_csv(csv_db.SPLIT_ROOMS_CSV,
+        ['room_code', 'creator_user_id', 'creator_name', 'title', 'total_amount', 'tip_pct', 'tax_pct', 'split_type', 'status', 'created_at'],
+        rooms
+    )
+
+    # Recalculate member shares
+    new_share_each = new_total / len(room_members)
+    for m in room_members:
+        m['share_amount'] = f"{new_share_each:.2f}"
+        m['updated_at'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+    csv_db.write_csv(csv_db.SPLIT_ROOM_MEMBERS_CSV,
+        ['id', 'room_code', 'user_id', 'member_name', 'member_contact', 'share_amount', 'status', 'updated_at'],
+        members
+    )
+
+    # Sync shared expenses
+    shared = csv_db.read_csv(csv_db.SHARED_EXPENSES_CSV)
+    for s in shared:
+        if f"[{code}]" in s.get('description', ''):
+            s['amount'] = f"{new_share_each:.2f}"
+            if new_title:
+                s['description'] = f"[{code}] {new_title}"
+    csv_db.write_csv(csv_db.SHARED_EXPENSES_CSV,
+        ['id', 'payer_user_id', 'payee_user_id', 'amount', 'description', 'split_type', 'status', 'created_at'],
+        shared
+    )
+
+    return jsonify({
+        'success': True,
+        'message': f"Updated bill total to ₹{new_total:.2f} (₹{new_share_each:.2f} each)!",
+        'new_total': f"{new_total:.2f}",
+        'new_per_person': f"{new_share_each:.2f}"
+    })
+
+
+@app.route('/api/split-rooms/<string:room_code>', methods=['DELETE'])
+@login_required
+def api_delete_split_room(room_code):
+    """Delete / Clear a Split Room and its associated data."""
+    code = room_code.strip().upper()
+    uid = session['user_id']
+
+    rooms = csv_db.read_csv(csv_db.SPLIT_ROOMS_CSV)
+    target_room = next((r for r in rooms if r.get('room_code', '').upper() == code), None)
+    if not target_room:
+        return jsonify({'success': False, 'message': 'Room not found.'}), 404
+
+    # Allow creator or member to delete/clear
+    if target_room.get('creator_user_id') != uid:
+        return jsonify({'success': False, 'message': 'Only the host can delete or clear this split room.'}), 403
+
+    # Remove room
+    updated_rooms = [r for r in rooms if r.get('room_code', '').upper() != code]
+    csv_db.write_csv(csv_db.SPLIT_ROOMS_CSV,
+        ['room_code', 'creator_user_id', 'creator_name', 'title', 'total_amount', 'tip_pct', 'tax_pct', 'split_type', 'status', 'created_at'],
+        updated_rooms
+    )
+
+    # Remove room members
+    members = csv_db.read_csv(csv_db.SPLIT_ROOM_MEMBERS_CSV)
+    updated_members = [m for m in members if m.get('room_code', '').upper() != code]
+    csv_db.write_csv(csv_db.SPLIT_ROOM_MEMBERS_CSV,
+        ['id', 'room_code', 'user_id', 'member_name', 'member_contact', 'share_amount', 'status', 'updated_at'],
+        updated_members
+    )
+
+    # Remove room expenses
+    expenses = csv_db.read_csv(csv_db.SPLIT_ROOM_EXPENSES_CSV)
+    updated_expenses = [e for e in expenses if e.get('room_code', '').upper() != code]
+    csv_db.write_csv(csv_db.SPLIT_ROOM_EXPENSES_CSV,
+        ['id', 'room_code', 'title', 'amount', 'added_by_name', 'created_at'],
+        updated_expenses
+    )
+
+    # Clean up linked pending shared expenses
+    shared = csv_db.read_csv(csv_db.SHARED_EXPENSES_CSV)
+    updated_shared = [s for s in shared if f"[{code}]" not in s.get('description', '')]
+    csv_db.write_csv(csv_db.SHARED_EXPENSES_CSV,
+        ['id', 'payer_user_id', 'payee_user_id', 'amount', 'description', 'split_type', 'status', 'created_at'],
+        updated_shared
+    )
+
+    return jsonify({'success': True, 'message': f'Split room "{code}" has been cleared and deleted.'})
+
+
+@app.route('/api/split-rooms/clear-all', methods=['POST'])
+@login_required
+def api_clear_all_split_rooms():
+    """Clear all split rooms created by the current user."""
+    uid = session['user_id']
+    rooms = csv_db.read_csv(csv_db.SPLIT_ROOMS_CSV)
+    user_rooms = [r for r in rooms if r.get('creator_user_id') == uid]
+    user_codes = {r.get('room_code', '').upper() for r in user_rooms}
+
+    if not user_codes:
+        return jsonify({'success': True, 'message': 'No rooms to clear.'})
+
+    remaining_rooms = [r for r in rooms if r.get('room_code', '').upper() not in user_codes]
+    csv_db.write_csv(csv_db.SPLIT_ROOMS_CSV,
+        ['room_code', 'creator_user_id', 'creator_name', 'title', 'total_amount', 'tip_pct', 'tax_pct', 'split_type', 'status', 'created_at'],
+        remaining_rooms
+    )
+
+    members = csv_db.read_csv(csv_db.SPLIT_ROOM_MEMBERS_CSV)
+    remaining_members = [m for m in members if m.get('room_code', '').upper() not in user_codes]
+    csv_db.write_csv(csv_db.SPLIT_ROOM_MEMBERS_CSV,
+        ['id', 'room_code', 'user_id', 'member_name', 'member_contact', 'share_amount', 'status', 'updated_at'],
+        remaining_members
+    )
+
+    expenses = csv_db.read_csv(csv_db.SPLIT_ROOM_EXPENSES_CSV)
+    remaining_expenses = [e for e in expenses if e.get('room_code', '').upper() not in user_codes]
+    csv_db.write_csv(csv_db.SPLIT_ROOM_EXPENSES_CSV,
+        ['id', 'room_code', 'title', 'amount', 'added_by_name', 'created_at'],
+        remaining_expenses
+    )
+
+    return jsonify({'success': True, 'message': f'Cleared {len(user_codes)} split rooms successfully!'})
 
 
 @app.route('/api/split-rooms/<string:room_code>/settle', methods=['POST'])

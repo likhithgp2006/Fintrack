@@ -15,6 +15,7 @@ FRIENDS_CSV = os.path.join(DATA_DIR, 'friends.csv')
 SHARED_EXPENSES_CSV = os.path.join(DATA_DIR, 'shared_expenses.csv')
 SPLIT_ROOMS_CSV = os.path.join(DATA_DIR, 'split_rooms.csv')
 SPLIT_ROOM_MEMBERS_CSV = os.path.join(DATA_DIR, 'split_room_members.csv')
+SPLIT_ROOM_EXPENSES_CSV = os.path.join(DATA_DIR, 'split_room_expenses.csv')
 
 _file_lock = threading.Lock()
 
@@ -101,6 +102,12 @@ def init_db():
             with open(SPLIT_ROOM_MEMBERS_CSV, mode='w', newline='', encoding='utf-8') as f:
                 writer = csv.writer(f)
                 writer.writerow(['id', 'room_code', 'user_id', 'member_name', 'member_contact', 'share_amount', 'status', 'updated_at'])
+
+        # Split Room Expenses / Itemized Additions CSV
+        if not os.path.exists(SPLIT_ROOM_EXPENSES_CSV):
+            with open(SPLIT_ROOM_EXPENSES_CSV, mode='w', newline='', encoding='utf-8') as f:
+                writer = csv.writer(f)
+                writer.writerow(['id', 'room_code', 'title', 'amount', 'added_by_name', 'created_at'])
 
 # Helper functions for CSV CRUD
 

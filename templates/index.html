@@ -4,7 +4,7 @@
 <div style="min-height: 100vh; background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%); color: white; display: flex; flex-direction: column;">
   
   <!-- Navbar -->
-  <header style="padding: 1.5rem 3rem; display: flex; align-items: center; justify-content: space-between; max-width: 1200px; margin: 0 auto; width: 100%;">
+  <header class="landing-header">
     <div style="display: flex; align-items: center; gap: 0.75rem;">
       <div class="logo-icon">
         <i class="fa-solid fa-wallet"></i>
@@ -12,38 +12,38 @@
       <span style="font-family: 'Outfit', sans-serif; font-size: 1.4rem; font-weight: 700; color: white;">ExpenseTracker</span>
     </div>
 
-    <div style="display: flex; gap: 1rem; align-items: center;">
+    <div style="display: flex; gap: 0.75rem; align-items: center;">
       <a href="{{ url_for('login_page') }}" class="btn btn-secondary btn-sm" style="color: white; border-color: rgba(255,255,255,0.2); background: rgba(255,255,255,0.05);">Login</a>
       <a href="{{ url_for('register_page') }}" class="btn btn-primary btn-sm">Get Started</a>
     </div>
   </header>
 
   <!-- Hero Section -->
-  <section style="max-width: 1100px; margin: 4rem auto; padding: 0 2rem; text-align: center; flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+  <section class="landing-hero">
     
-    <div style="display: inline-flex; align-items: center; gap: 0.5rem; background: rgba(99, 102, 241, 0.15); border: 1px solid rgba(99, 102, 241, 0.3); padding: 0.4rem 1rem; border-radius: 9999px; font-size: 0.85rem; font-weight: 600; color: #a5b4fc; margin-bottom: 1.5rem;">
+    <div class="landing-hero-badge">
       <i class="fa-solid fa-sparkles"></i> Full-Stack Personal Finance Platform
     </div>
 
-    <h1 style="font-size: 3.5rem; font-weight: 800; line-height: 1.15; margin-bottom: 1.25rem; background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+    <h1 class="landing-title">
       Take Control of Your Money with Smart Expense Tracking
     </h1>
 
-    <p style="font-size: 1.2rem; color: #94a3b8; max-width: 720px; margin-bottom: 2.5rem; line-height: 1.6;">
+    <p class="landing-subtitle">
       Track daily expenses, manage category budgets, monitor income streams, and visualize your spending habits with interactive charts and real-time reports.
     </p>
 
-    <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
-      <a href="{{ url_for('register_page') }}" class="btn btn-primary" style="padding: 0.9rem 2rem; font-size: 1.05rem;">
+    <div class="landing-actions">
+      <a href="{{ url_for('register_page') }}" class="btn btn-primary landing-cta-btn">
         <i class="fa-solid fa-rocket"></i> Create Free Account
       </a>
-      <a href="{{ url_for('login_page') }}" class="btn btn-secondary" style="padding: 0.9rem 2rem; font-size: 1.05rem; background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.2); color: white;">
+      <a href="{{ url_for('login_page') }}" class="btn btn-secondary landing-cta-btn" style="background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.2); color: white;">
         <i class="fa-solid fa-right-to-bracket"></i> Sign In to Account
       </a>
     </div>
 
     <!-- Feature Grid -->
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.5rem; width: 100%; margin-top: 4.5rem; text-align: left;">
+    <div class="landing-features">
       
       <div style="background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.08); padding: 1.5rem; border-radius: 16px;">
         <div style="width: 48px; height: 48px; background: rgba(99, 102, 241, 0.2); color: #818cf8; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; margin-bottom: 1rem;">

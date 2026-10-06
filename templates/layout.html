@@ -30,12 +30,17 @@
     <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
 
     <!-- Sidebar -->
-    <aside class="sidebar">
+    <aside class="sidebar" id="appSidebar">
       <div class="sidebar-header">
-        <div class="logo-icon">
-          <i class="fa-solid fa-wallet"></i>
+        <div class="sidebar-brand">
+          <div class="logo-icon">
+            <i class="fa-solid fa-wallet"></i>
+          </div>
+          <div class="logo-text">ExpenseTracker</div>
         </div>
-        <div class="logo-text">ExpenseTracker</div>
+        <button type="button" class="sidebar-close-btn" id="sidebarCloseBtn" aria-label="Close Navigation Menu">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
       </div>
 
       <ul class="sidebar-menu">
@@ -127,7 +132,7 @@
       <!-- Top Navigation Bar -->
       <header class="top-navbar">
         <div class="nav-left">
-          <button class="mobile-toggle" id="mobileMenuToggle">
+          <button class="mobile-toggle" id="mobileMenuToggle" aria-label="Toggle navigation menu">
             <i class="fa-solid fa-bars"></i>
           </button>
           <h2 class="page-title-text">{% block page_title %}Dashboard{% endblock %}</h2>
@@ -137,7 +142,7 @@
           <!-- Multi-Currency Selector Dropdown -->
           <div class="currency-dropdown-wrap" title="Change Preferred Currency">
             <i class="fa-solid fa-coins currency-icon"></i>
-            <select class="global-currency-select" id="navbarCurrencySelect">
+            <select class="global-currency-select" id="navbarCurrencySelect" aria-label="Select currency">
               <option value="INR">₹ INR</option>
               <option value="USD">$ USD</option>
               <option value="EUR">€ EUR</option>
@@ -150,12 +155,12 @@
           </div>
 
           <!-- Quick CSV Import Button -->
-          <button class="theme-toggle-btn" id="openCsvImportModalBtn" title="Bulk Import CSV Transactions">
+          <button class="theme-toggle-btn nav-action-btn" id="openCsvImportModalBtn" title="Bulk Import CSV Transactions" aria-label="Bulk Import CSV Transactions">
             <i class="fa-solid fa-file-import"></i>
           </button>
 
           <!-- Theme Switcher Button -->
-          <button class="theme-toggle-btn" id="themeToggleBtn" title="Toggle Light/Dark Mode">
+          <button class="theme-toggle-btn" id="themeToggleBtn" title="Toggle Light/Dark Mode" aria-label="Toggle Light/Dark Mode">
             <i class="fa-solid fa-moon"></i>
           </button>
 

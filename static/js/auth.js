@@ -43,20 +43,66 @@ function updateThemeIcon(theme) {
 // Mobile Hamburger Menu
 function initMobileMenu() {
   const toggleBtn = document.getElementById('mobileMenuToggle');
+  const closeBtn = document.getElementById('sidebarCloseBtn');
   const sidebar = document.querySelector('.sidebar');
   const backdrop = document.getElementById('sidebarBackdrop');
 
+  const closeSidebar = () => {
+    if (sidebar) sidebar.classList.remove('mobile-open');
+    if (backdrop) backdrop.classList.remove('active');
+    document.body.style.overflow = '';
+  };
+
+  const openSidebar = () => {
+    if (sidebar) sidebar.classList.add('mobile-open');
+    if (backdrop) backdrop.classList.add('active');
+    if (window.innerWidth <= 768) {
+      document.body.style.overflow = 'hidden';
+    }
+  };
+
   if (toggleBtn && sidebar && backdrop) {
     toggleBtn.addEventListener('click', () => {
-      sidebar.classList.toggle('mobile-open');
-      backdrop.classList.toggle('active');
+      const isOpen = sidebar.classList.contains('mobile-open');
+      if (isOpen) {
+        closeSidebar();
+      } else {
+        openSidebar();
+      }
     });
 
-    backdrop.addEventListener('click', () => {
-      sidebar.classList.remove('mobile-open');
-      backdrop.classList.remove('active');
-    });
+    backdrop.addEventListener('click', closeSidebar);
   }
+
+  if (closeBtn) {
+    closeBtn.addEventListener('click', closeSidebar);
+  }
+
+  // Auto-close on link click when on mobile
+  const sidebarLinks = document.querySelectorAll('.sidebar-link');
+  sidebarLinks.forEach(link => {
+    link.addEventListener('click', () => {
+      if (window.innerWidth <= 768) {
+        closeSidebar();
+      }
+    });
+  });
+
+  // Close with Escape key
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && sidebar && sidebar.classList.contains('mobile-open')) {
+      closeSidebar();
+    }
+  });
+
+  // Reset body overflow on window resize to desktop
+  window.addEventListener('resize', () => {
+    if (window.innerWidth > 768) {
+      document.body.style.overflow = '';
+      if (sidebar) sidebar.classList.remove('mobile-open');
+      if (backdrop) backdrop.classList.remove('active');
+    }
+  });
 }
 
 // Logout Action
