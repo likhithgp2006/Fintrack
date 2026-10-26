@@ -7,7 +7,7 @@ A full-stack, responsive web application for personal expense tracking, budgetin
 ---
 
 ## 🌐 Live Deployment
-- **Live Demo Link:** `https://fintrack-rust-seven.vercel.app/` *(Send your link and it will be updated here!)*
+- **Live Demo Link:https://fintrack-rust-seven.vercel.app/ (Send your link and it will be updated here!)*
 - **GitHub Repository:** [https://github.com/likhithgp2006/Fintrack](https://github.com/likhithgp2006/Fintrack)
 
 ---
