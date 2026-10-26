@@ -1,10 +1,28 @@
 import os
 import csv
+import shutil
 import threading
 from datetime import datetime
 from werkzeug.security import generate_password_hash
 
-DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data')
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+BUNDLED_DATA_DIR = os.path.join(BASE_DIR, 'data')
+
+def _determine_data_dir():
+    # If running on Vercel, AWS Lambda, or a read-only filesystem, use /tmp/fintrack_data
+    if os.environ.get('VERCEL') or os.environ.get('AWS_LAMBDA_FUNCTION_NAME'):
+        return '/tmp/fintrack_data'
+    try:
+        os.makedirs(BUNDLED_DATA_DIR, exist_ok=True)
+        test_file = os.path.join(BUNDLED_DATA_DIR, '.writable_test')
+        with open(test_file, 'w', encoding='utf-8') as f:
+            f.write('ok')
+        os.remove(test_file)
+        return BUNDLED_DATA_DIR
+    except Exception:
+        return '/tmp/fintrack_data'
+
+DATA_DIR = _determine_data_dir()
 USERS_CSV = os.path.join(DATA_DIR, 'users.csv')
 EXPENSES_CSV = os.path.join(DATA_DIR, 'expenses.csv')
 CATEGORIES_CSV = os.path.join(DATA_DIR, 'categories.csv')
@@ -21,7 +39,19 @@ _file_lock = threading.Lock()
 
 def init_db():
     if not os.path.exists(DATA_DIR):
-        os.makedirs(DATA_DIR)
+        os.makedirs(DATA_DIR, exist_ok=True)
+        
+    with _file_lock:
+        # If DATA_DIR is in /tmp, copy initial seed files from BUNDLED_DATA_DIR
+        if os.path.abspath(DATA_DIR) != os.path.abspath(BUNDLED_DATA_DIR) and os.path.exists(BUNDLED_DATA_DIR):
+            try:
+                for fname in os.listdir(BUNDLED_DATA_DIR):
+                    src_f = os.path.join(BUNDLED_DATA_DIR, fname)
+                    dst_f = os.path.join(DATA_DIR, fname)
+                    if os.path.isfile(src_f) and not os.path.exists(dst_f):
+                        shutil.copy2(src_f, dst_f)
+            except Exception:
+                pass
         
     with _file_lock:
         # Users CSV
@@ -121,6 +151,7 @@ def read_csv(filepath):
 
 def write_csv(filepath, fieldnames, rows):
     with _file_lock:
+        os.makedirs(os.path.dirname(filepath), exist_ok=True)
         with open(filepath, mode='w', newline='', encoding='utf-8') as f:
             writer = csv.DictWriter(f, fieldnames=fieldnames)
             writer.writeheader()
@@ -128,6 +159,7 @@ def write_csv(filepath, fieldnames, rows):
 
 def append_csv(filepath, fieldnames, row_dict):
     with _file_lock:
+        os.makedirs(os.path.dirname(filepath), exist_ok=True)
         with open(filepath, mode='a', newline='', encoding='utf-8') as f:
             writer = csv.DictWriter(f, fieldnames=fieldnames)
             writer.writerow(row_dict)

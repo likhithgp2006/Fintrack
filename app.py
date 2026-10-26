@@ -49,15 +49,25 @@ def _load_local_env():
 
 _load_local_env()
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
 import csv_db
 
-app = Flask(__name__)
+app = Flask(
+    __name__,
+    template_folder=os.path.join(BASE_DIR, 'templates'),
+    static_folder=os.path.join(BASE_DIR, 'static'),
+    static_url_path='/static'
+)
 app.secret_key = os.environ.get('SECRET_KEY', 'smart_expense_tracker_bca_secret_key_2026')
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=365)
 CORS(app)
 
-# Initialize database CSVs on startup
-csv_db.init_db()
+# Initialize database CSVs on startup safely
+try:
+    csv_db.init_db()
+except Exception as _e:
+    print(f"Warning initializing database: {_e}")
 
 # --- Auth Decorator ---
 def login_required(f):
